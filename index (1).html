@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedidos Reparto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F6F3;--surface:#FFFFFF;--border:#E5E3DC;
+  --text:#1A1916;--text-2:#6B6860;--text-3:#9C9A92;
+  --green:#1D7A4F;--green-bg:#E8F5EE;
+  --red:#C0392B;--red-bg:#FDECEA;
+  --amber:#92580A;--amber-bg:#FEF3E2;
+  --blue:#1A5FA8;--blue-bg:#E8F0FB;
+  --accent:#2A5C45;--accent-light:#E8F2EC;
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;z-index:10;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.brand{font-size:15px;font-weight:600;color:var(--accent)}
+.sub{font-size:11px;color:var(--text-3);margin-top:2px}
+.sync-status{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:5px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-3);flex-shrink:0}
+.sync-dot.ok{background:var(--green)}.sync-dot.error{background:var(--red)}.sync-dot.loading{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-section{padding:12px 10px 4px}
+.nav-label{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text-2);font-size:13px;font-weight:500;margin-bottom:2px;transition:background .15s}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:var(--accent)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.main{margin-left:220px;flex:1;padding:32px 36px;max-width:1100px}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:22px;font-weight:600;letter-spacing:-.03em;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text-2);margin-bottom:28px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.card-title{font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.metric-label{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.metric-value{font-size:22px;font-weight:600;font-family:'DM Mono',monospace}
+.metric-value.green{color:var(--green)}.metric-value.red{color:var(--red)}.metric-value.amber{color:var(--amber)}
+.form-grid{display:grid;gap:12px}
+.g3{grid-template-columns:1fr 1fr 1fr}.g2{grid-template-columns:1fr 1fr}.g3a{grid-template-columns:1fr 90px auto;align-items:end}
+label{display:block;font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+input,select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--accent)}
+.btn{padding:9px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;gap:6px;transition:background .15s}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#1e4a36}
+.btn-danger{color:var(--red);border-color:#F5BFBA}
+.btn-danger:hover{background:var(--red-bg)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg)}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.bg{background:var(--green-bg);color:var(--green)}.ba{background:var(--amber-bg);color:var(--amber)}.br{background:var(--red-bg);color:var(--red)}.bb{background:var(--blue-bg);color:var(--blue)}
+.alert{padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px}
+.aw{background:var(--amber-bg);color:var(--amber);border:1px solid #F5D89A}
+.ai{background:var(--blue-bg);color:var(--blue);border:1px solid #B8D0F0}
+.as{background:var(--green-bg);color:var(--green);border:1px solid #A8D8BD}
+.ae{background:var(--red-bg);color:var(--red);border:1px solid #F5BFBA}
+.item-row{display:grid;grid-template-columns:1fr 110px 170px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.item-row:last-child{border-bottom:none}
+.qty-ctrl{display:flex;align-items:center;gap:6px}
+.qty-ctrl button{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:var(--bg);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-2)}
+.qty-ctrl button:hover{background:var(--border)}
+.qty-num{font-family:'DM Mono',monospace;font-weight:500;font-size:14px;min-width:24px;text-align:center}
+.totals-bar{display:flex;justify-content:flex-end;gap:28px;padding:16px 0 0;flex-wrap:wrap}
+.total-item{text-align:right}
+.total-label{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.total-val{font-size:20px;font-weight:600;font-family:'DM Mono',monospace}
+.total-val.green{color:var(--green)}.total-val.red{color:var(--red)}
+.orden-overlay{display:none;background:rgba(26,25,22,.5);border-radius:var(--radius);padding:24px;margin-top:20px}
+.orden-box{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px 32px;max-width:640px}
+hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
+.mono{font-family:'DM Mono',monospace}
+.tw{overflow-x:auto}
+.empty{text-align:center;padding:48px 20px;color:var(--text-3);font-size:13px}
+.toast{position:fixed;bottom:24px;right:24px;z-index:200;min-width:260px;border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px;width:420px;max-width:90vw}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;margin:2px}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);transition:transform .2s}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding:20px 16px}
+  .g3,.g2{grid-template-columns:1fr}
+  .g3a{grid-template-columns:1fr 80px auto}
+  .metrics{grid-template-columns:1fr 1fr}
+  .mob{display:flex!important}
+}
+.mob{display:none;position:fixed;top:14px;left:14px;z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;cursor:pointer}
+</style>
+</head>
+<body>
+<button class="mob" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menú">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="app">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">Reparto</div>
+    <div class="sub">Sistema de pedidos</div>
+    <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-txt" style="color:var(--text-3)">Conectando...</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Operaciones</div>
+    <div class="nav-item active" onclick="goPage('nuevo',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nuevo pedido
+    </div>
+    <div class="nav-item" onclick="goPage('historial',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>Historial
+    </div>
+    <div class="nav-item" onclick="goPage('cobros',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Cobros pendientes
+      <span id="badge-cobros" style="display:none;margin-left:auto;background:var(--red-bg);color:var(--red);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px"></span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Análisis</div>
+    <div class="nav-item" onclick="goPage('rentabilidad',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Rentabilidad
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Config</div>
+    <div class="nav-item" onclick="goPage('admin',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>Admin catálogo
+    </div>
+  </div>
+</nav>
+<main class="main">
+
+<!-- NUEVO PEDIDO -->
+<div id="page-nuevo" class="page active">
+  <div class="page-title">Nuevo pedido</div>
+  <div class="page-sub">Registrá un pedido — se guarda automáticamente en Google Sheets</div>
+  <div class="card">
+    <div class="card-title">Datos del pedido</div>
+    <div class="form-grid g3">
+      <div><label>Cliente</label><select id="np-cliente" onchange="cargarProductosCliente()"><option value="">— Seleccioná un cliente —</option></select></div>
+      <div><label>Fecha</label><input type="date" id="np-fecha"/></div>
+      <div><label>Nota (opcional)</label><input type="text" id="np-nota" placeholder="Ej: Pedido urgente"/></div>
+    </div>
+  </div>
+  <div class="card" id="card-prods" style="display:none">
+    <div class="card-title">Agregar productos</div>
+    <div class="form-grid g3a" style="margin-bottom:16px">
+      <div><label>Producto</label><select id="np-producto"><option value="">— Elegí un producto —</option></select></div>
+      <div><label>Cantidad</label><input type="number" id="np-cantidad" min="1" value="1"/></div>
+      <button class="btn btn-primary" style="height:38px;margin-top:auto" onclick="agregarItem()">+ Agregar</button>
+    </div>
+    <div id="items-lista"></div>
+    <div id="items-footer" style="display:none">
+      <hr class="div">
+      <div class="totals-bar">
+        <div class="total-item"><div class="total-label">Costo a papá</div><div class="total-val red" id="tot-costo">₡0</div></div>
+        <div class="total-item"><div class="total-label">Facturación</div><div class="total-val" id="tot-venta">₡0</div></div>
+        <div class="total-item"><div class="total-label">Ganancia</div><div class="total-val green" id="tot-ganancia">₡0</div></div>
+        <div class="total-item"><div class="total-label">Margen</div><div class="total-val" id="tot-margen">0%</div></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+        <button class="btn" onclick="limpiarPedido()">Limpiar</button>
+        <button class="btn btn-primary" id="btn-guardar" onclick="guardarPedido()">✓ Guardar pedido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORIAL -->
+<div id="page-historial" class="page">
+  <div class="page-title">Historial de pedidos</div>
+  <div class="page-sub">Todos los pedidos registrados</div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <select id="filtro-cliente" onchange="renderHistorial()" style="width:auto;min-width:180px"><option value="">Todos los clientes</option></select>
+    <select id="filtro-estado" onchange="renderHistorial()" style="width:auto"><option value="">Todos</option><option value="pendiente">Pendiente</option><option value="cobrado">Cobrado</option></select>
+    <button class="btn btn-sm" onclick="cargarPedidos(true)" style="margin-left:auto">↻ Actualizar</button>
+  </div>
+  <div class="card" style="padding:0"><div id="tabla-historial"><div class="empty">Cargando...</div></div></div>
+</div>
+
+<!-- COBROS -->
+<div id="page-cobros" class="page">
+  <div class="page-title">Cobros pendientes</div>
+  <div class="page-sub">Clientes con crédito y fechas de cobro estimadas</div>
+  <div id="alertas-cobros"></div>
+  <div class="card" style="padding:0"><div id="tabla-cobros"><div class="empty">Cargando...</div></div></div>
+</div>
+
+<!-- RENTABILIDAD -->
+<div id="page-rentabilidad" class="page">
+  <div class="page-title">Rentabilidad</div>
+  <div class="page-sub">Análisis de ganancia por cliente</div>
+  <div class="metrics" id="metricas-top"></div>
+  <div id="tabla-rentabilidad"><div class="empty">Registrá pedidos para ver el análisis.</div></div>
+</div>
+
+<!-- ADMIN -->
+<div id="page-admin" class="page">
+  <div class="page-title">Admin catálogo</div>
+  <div class="page-sub">Administrá productos, clientes y precios</div>
+  <div id="admin-login">
+    <div class="card" style="max-width:360px">
+      <div class="card-title">Acceso restringido</div>
+      <div><label>Clave</label><input type="password" id="admin-pass" placeholder="Ingresá la clave" onkeydown="if(event.key==='Enter')verificarClave()"/></div>
+      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="verificarClave()">Entrar</button>
+      <div id="admin-error" style="color:var(--red);font-size:12px;margin-top:8px;display:none">Clave incorrecta</div>
+    </div>
+  </div>
+  <div id="admin-panel" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="showAdminTab('productos')" id="atab-productos" style="background:var(--accent);color:#fff;border-color:var(--accent)">Productos</button>
+      <button class="btn btn-sm" onclick="showAdminTab('clientes')" id="atab-clientes">Clientes</button>
+      <button class="btn btn-sm" onclick="showAdminTab('precios')" id="atab-precios">Precios</button>
+    </div>
+
+    <!-- ADMIN: PRODUCTOS -->
+    <div id="admin-productos">
+      <div class="card">
+        <div class="card-title">Agregar / editar producto</div>
+        <div class="form-grid g3" style="margin-bottom:12px">
+          <div><label>Nombre</label><input type="text" id="ap-nombre" placeholder="Nombre del producto"/></div>
+          <div><label>Unidad</label><input type="text" id="ap-unidad" placeholder="unidad, Paquete, etc."/></div>
+          <div><label>Costo papá (₡)</label><input type="number" id="ap-costo" min="0" placeholder="0"/></div>
+        </div>
+        <input type="hidden" id="ap-id"/>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="guardarProductoAdmin()">Guardar producto</button>
+          <button class="btn" onclick="limpiarFormProducto()" id="btn-cancelar-prod" style="display:none">Cancelar</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0"><div id="lista-admin-productos"><div class="empty">Cargando...</div></div></div>
+    </div>
+
+    <!-- ADMIN: CLIENTES -->
+    <div id="admin-clientes" style="display:none">
+      <div class="card">
+        <div class="card-title">Agregar / editar cliente</div>
+        <div class="form-grid g2" style="margin-bottom:12px">
+          <div><label>Nombre</label><input type="text" id="ac-nombre" placeholder="Nombre del cliente"/></div>
+          <div><label>Zona / ruta</label><input type="text" id="ac-zona" placeholder="Ej: Heredia centro"/></div>
+        </div>
+        <div class="form-grid g2" style="margin-bottom:12px">
+          <div><label>Condición de pago</label>
+            <select id="ac-pago" onchange="document.getElementById('ac-dias-wrap').style.display=this.value==='credito'?'block':'none'">
+              <option value="contado">Contado</option>
+              <option value="credito">Crédito</option>
+            </select>
+          </div>
+          <div id="ac-dias-wrap" style="display:none"><label>Días de crédito</label><input type="number" id="ac-dias" min="1" value="15"/></div>
+        </div>
+        <input type="hidden" id="ac-id"/>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="guardarClienteAdmin()">Guardar cliente</button>
+          <button class="btn" onclick="limpiarFormCliente()" id="btn-cancelar-cli" style="display:none">Cancelar</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0"><div id="lista-admin-clientes"><div class="empty">Cargando...</div></div></div>
+    </div>
+
+    <!-- ADMIN: PRECIOS -->
+    <div id="admin-precios" style="display:none">
+      <div class="card">
+        <div class="card-title">Agregar / editar precio</div>
+        <div class="form-grid g3" style="margin-bottom:12px">
+          <div><label>Cliente</label>
+            <select id="apr-cliente" onchange="renderPreciosCliente()"><option value="">— Seleccioná —</option></select>
+          </div>
+          <div><label>Producto</label>
+            <select id="apr-producto"><option value="">— Seleccioná —</option></select>
+          </div>
+          <div><label>Precio venta (₡)</label><input type="number" id="apr-precio" min="0" placeholder="0"/></div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarPrecioAdmin()">Guardar precio</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Precios por cliente</div>
+        <div style="margin-bottom:12px">
+          <select id="filtro-precios-cliente" onchange="renderPreciosCliente()" style="width:auto;min-width:200px"><option value="">— Seleccioná un cliente —</option></select>
+        </div>
+        <div id="lista-precios-cliente"><div class="empty">Seleccioná un cliente para ver sus precios.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDEN INLINE -->
+<div class="orden-overlay" id="orden-overlay">
+  <div class="orden-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:18px;font-weight:600;color:var(--accent)">Orden de producción</div><div style="font-size:12px;color:var(--text-3);margin-top:3px">Para papá — resumen de costo</div></div>
+      <button class="btn btn-sm" onclick="cerrarOrden()">✕ Cerrar</button>
+    </div>
+    <div id="orden-contenido"></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz81p3FmdSzW9aPw9mADkwM9dKvykEpLwsNzhwrr8Ve28T5kNpHutlW1umh5JJDfiefzw/exec';
+const ADMIN_KEY = 'Xarcia1970';
+const fmt = n => '₡' + Math.round(n).toLocaleString('es-CR');
+const pct = n => (Math.round(n*10)/10).toFixed(1)+'%';
+
+let PRODUCTOS = [
+  {id:'p1',nombre:'Pan de queso',unidad:'unidad',costo:350},
+  {id:'p2',nombre:'Cangrejo SIN Relleno',unidad:'unidad',costo:162.35},
+  {id:'p3',nombre:'Cangrejo jamon/queso crema promo',unidad:'unidad',costo:553.31},
+  {id:'p4',nombre:'Taco QUESO PASTA',unidad:'unidad',costo:224.29},
+  {id:'p5',nombre:'Taco de POLLO',unidad:'unidad',costo:266.79},
+  {id:'p6',nombre:'Empanada de Pollo',unidad:'unidad',costo:266.89},
+  {id:'p7',nombre:'Pañuelo DUL/LECHE',unidad:'unidad',costo:301.79},
+  {id:'p8',nombre:'Enchilada Papa',unidad:'unidad',costo:189.29},
+  {id:'p9',nombre:'Chavitos',unidad:'unidad',costo:447.83},
+  {id:'p10',nombre:'Flauta Manzana',unidad:'unidad',costo:200.8},
+  {id:'p11',nombre:'Enchillada Pollo',unidad:'unidad',costo:266.79},
+  {id:'p12',nombre:'Enchilada Carne',unidad:'unidad',costo:266.89},
+  {id:'p13',nombre:'Arrollado Jamon/Queso',unidad:'unidad',costo:297.29},
+  {id:'p14',nombre:'Taco Carne mechada',unidad:'unidad',costo:266.89},
+  {id:'p15',nombre:'Pastel Carne Mechada',unidad:'unidad',costo:266.89},
+  {id:'p16',nombre:'Enchilada Pinto Caribeño',unidad:'unidad',costo:151.79},
+  {id:'p17',nombre:'Torta del Chavo',unidad:'unidad',costo:302.8},
+  {id:'p18',nombre:'Flauta Pastelera',unidad:'unidad',costo:178.56},
+  {id:'p19',nombre:'Pastel SIN relleno',unidad:'unidad',costo:102},
+  {id:'p20',nombre:'Alfajores',unidad:'unidad',costo:244},
+  {id:'p21',nombre:'Taco QUESO promo',unidad:'Promo x2',costo:448.59},
+  {id:'p22',nombre:'Taco de POLLO promo',unidad:'Promo x2',costo:533.59},
+  {id:'p23',nombre:'Empanada de Pollo promo',unidad:'Promo x2',costo:533.77},
+  {id:'p24',nombre:'Enchilada Papa promo',unidad:'Promo x2',costo:378.59},
+  {id:'p25',nombre:'Flauta Manzana promo',unidad:'Promo x2',costo:401.6},
+  {id:'p26',nombre:'Enchillada Pollo promo',unidad:'Promo x2',costo:533.59},
+  {id:'p27',nombre:'Enchilada Carne promo',unidad:'Promo x2',costo:533.77},
+  {id:'p28',nombre:'Arrollado Jamon/Queso promo',unidad:'Promo x2',costo:594.59},
+  {id:'p29',nombre:'Taco Carne mechada promo',unidad:'Promo x2',costo:533.77},
+  {id:'p30',nombre:'Pastel Carne Mechada promo',unidad:'Promo x2',costo:533.77},
+  {id:'p31',nombre:'Enchilada Pinto Caribeño promo',unidad:'Promo x2',costo:303.59},
+  {id:'p32',nombre:'Pan Pizza',unidad:'unidad',costo:481},
+  {id:'p33',nombre:'Baguette',unidad:'unidad',costo:220},
+  {id:'p34',nombre:'Dulce Piña',unidad:'unidad',costo:499.47},
+  {id:'p35',nombre:'Dulce Piña/QC',unidad:'unidad',costo:778.46},
+  {id:'p36',nombre:'Dulce Dulce Leche',unidad:'unidad',costo:606.24},
+  {id:'p37',nombre:'Dulce Pastelera',unidad:'unidad',costo:690.08},
+  {id:'p38',nombre:'Dulce Queso-Guaya',unidad:'unidad',costo:788.14},
+  {id:'p39',nombre:'Tamal Asado',unidad:'unidad',costo:300},
+  {id:'p40',nombre:'Tamal Elote',unidad:'unidad',costo:178},
+  {id:'p41',nombre:'Cocadas',unidad:'unidad',costo:45},
+  {id:'p42',nombre:'Caseros',unidad:'Paquete',costo:650},
+  {id:'p43',nombre:'Cocadas promo',unidad:'Promo x4',costo:180},
+  {id:'p44',nombre:'Piña Natillera',unidad:'unidad',costo:500},
+  {id:'p45',nombre:'Pan especies',unidad:'Promo x4',costo:180},
+  {id:'p46',nombre:'Tamal queso crema',unidad:'unidad',costo:380},
+  {id:'p47',nombre:'Galleta panaderia',unidad:'Paquete 12',costo:225},
+  {id:'p48',nombre:'Julietas',unidad:'Paquete 12',costo:350},
+  {id:'p49',nombre:'Galleta coco',unidad:'Paquete 12',costo:350},
+  {id:'p50',nombre:'Rosquillas',unidad:'Paquete 12',costo:350},
+  {id:'p51',nombre:'Bizcotelas',unidad:'Paquete 6',costo:150},
+  {id:'p52',nombre:'Pastel carne molida',unidad:'unidad',costo:232},
+  {id:'p53',nombre:'Pastel pollo',unidad:'unidad',costo:266.8},
+  {id:'p54',nombre:'Burrito Salsero',unidad:'unidad',costo:447},
+  {id:'p55',nombre:'Costilla guayaba',unidad:'unidad',costo:178},
+  {id:'p56',nombre:'Flauta Pastelera/Choco',unidad:'unidad',costo:200}
+];
+let CLIENTES = [
+  {id:'c1',nombre:'Eduardo UNA Heredia',zona:'Heredia centro',pago:'credito',diasCredito:22},
+  {id:'c2',nombre:'Vanesa',zona:'San Jose, Estacion Atlantico',pago:'contado',diasCredito:0},
+  {id:'c3',nombre:'Michael',zona:'San Jose, Guadalupe',pago:'contado',diasCredito:0},
+  {id:'c4',nombre:'Paqueteria y Reparto',zona:'-',pago:'credito',diasCredito:22},
+  {id:'c5',nombre:'Carlos Mercadito Verde',zona:'Sabanilla',pago:'contado',diasCredito:0}
+];
+let PRECIOS = [
+  {clienteId:'c1',productoId:'p2',precio:575},
+  {clienteId:'c1',productoId:'p4',precio:575},
+  {clienteId:'c1',productoId:'p6',precio:575},
+  {clienteId:'c1',productoId:'p7',precio:575},
+  {clienteId:'c1',productoId:'p8',precio:575},
+  {clienteId:'c1',productoId:'p19',precio:575},
+  {clienteId:'c1',productoId:'p18',precio:575},
+  {clienteId:'c1',productoId:'p33',precio:575},
+  {clienteId:'c1',productoId:'p20',precio:575},
+  {clienteId:'c3',productoId:'p41',precio:200},
+  {clienteId:'c5',productoId:'p52',precio:475},
+  {clienteId:'c5',productoId:'p53',precio:475},
+  {clienteId:'c5',productoId:'p8',precio:450},
+  {clienteId:'c5',productoId:'p5',precio:475},
+  {clienteId:'c5',productoId:'p4',precio:475},
+  {clienteId:'c5',productoId:'p9',precio:800},
+  {clienteId:'c5',productoId:'p54',precio:800},
+  {clienteId:'c5',productoId:'p55',precio:450},
+  {clienteId:'c5',productoId:'p18',precio:450},
+  {clienteId:'c5',productoId:'p10',precio:450},
+  {clienteId:'c5',productoId:'p56',precio:475}
+];
+
+let pedidos = [];
+let itemsActuales = [];
+let catalogoCargado = false;
+
+// ── SYNC ──────────────────────────────────────────────────────────────────
+function setSyncStatus(e,t){
+  document.getElementById('sync-dot').className='sync-dot '+e;
+  const el=document.getElementById('sync-txt');
+  el.textContent=t;
+  el.style.color=e==='ok'?'var(--green)':e==='error'?'var(--red)':'var(--amber)';
+}
+
+function jsonp(url){
+  return new Promise((res,rej)=>{
+    const cb='cb_'+Date.now();
+    const s=document.createElement('script');
+    window[cb]=d=>{delete window[cb];document.body.removeChild(s);res(d)};
+    s.onerror=()=>{delete window[cb];try{document.body.removeChild(s)}catch(e){}rej(new Error('Network error'))};
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb+'&t='+Date.now();
+    document.body.appendChild(s);
+  });
+}
+
+function apiPost(body){
+  return fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(body)})
+    .then(()=>{{}return{ok:true}});
+}
+
+async function cargarPedidos(mostrarToast=false){
+  setSyncStatus('loading','Sincronizando...');
+  try{
+    const d=await jsonp(SCRIPT_URL+'?tipo=pedidos');
+    if(d.ok){pedidos=d.pedidos||[];setSyncStatus('ok','Sincronizado');actualizarBadge();if(mostrarToast)toast('Pedidos actualizados','as');}
+    else setSyncStatus('error','Error al cargar');
+  }catch(e){setSyncStatus('error','Sin conexión');if(mostrarToast)toast('Sin conexión','ae');}
+}
+
+async function cargarCatalogo(){
+  try{
+    const d=await jsonp(SCRIPT_URL+'?tipo=catalogo');
+    if(d.ok&&d.catalogo){
+      PRODUCTOS=d.catalogo.productos;
+      CLIENTES=d.catalogo.clientes;
+      PRECIOS=d.catalogo.precios;
+      catalogoCargado=true;
+      reinitSelects();
+    }
+  }catch(e){}
+}
+
+async function sincronizarCatalogo(){
+  try{
+    await apiPost({action:'guardarCatalogo',catalogo:{productos:PRODUCTOS,clientes:CLIENTES,precios:PRECIOS}});
+  }catch(e){}
+}
+
+function reinitSelects(){
+  const sel=document.getElementById('np-cliente');
+  const fc=document.getElementById('filtro-cliente');
+  const aprCli=document.getElementById('apr-cliente');
+  const filtroPreciosCli=document.getElementById('filtro-precios-cliente');
+  [sel,fc,aprCli,filtroPreciosCli].forEach(s=>{
+    const val=s.value;
+    s.innerHTML=s===sel?'<option value="">— Seleccioná un cliente —</option>':'<option value="">Todos los clientes</option>';
+    if(s===aprCli||s===filtroPreciosCli) s.innerHTML='<option value="">— Seleccioná —</option>';
+    CLIENTES.forEach(c=>s.innerHTML+=`<option value="${c.id}">${c.nombre}</option>`);
+    s.value=val;
+  });
+  const aprProd=document.getElementById('apr-producto');
+  aprProd.innerHTML='<option value="">— Seleccioná —</option>';
+  PRODUCTOS.forEach(p=>aprProd.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`);
+}
+
+// ── NAVEGACIÓN ────────────────────────────────────────────────────────────
+function goPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  cerrarOrden();
+  document.getElementById('sidebar').classList.remove('open');
+  if(id==='historial'){cargarPedidos().then(renderHistorial)}
+  if(id==='cobros'){cargarPedidos().then(renderCobros)}
+  if(id==='rentabilidad'){cargarPedidos().then(renderRentabilidad)}
+  if(id==='admin')renderAdminProductos();
+}
+
+function actualizarBadge(){
+  const hoy=new Date().toISOString().split('T')[0];
+  const v=pedidos.filter(p=>p.estado==='pendiente'&&p.tipoPago==='credito'&&p.fechaCobro<=hoy).length;
+  const b=document.getElementById('badge-cobros');
+  b.style.display=v>0?'inline':'none';
+  if(v>0)b.textContent=v;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+function initApp(){
+  reinitSelects();
+  document.getElementById('np-fecha').value=new Date().toISOString().split('T')[0];
+  cargarPedidos();
+  cargarCatalogo();
+}
+
+// ── PEDIDO ────────────────────────────────────────────────────────────────
+function cargarProductosCliente(){
+  const cid=document.getElementById('np-cliente').value;
+  const sel=document.getElementById('np-producto');
+  sel.innerHTML='<option value="">— Elegí un producto —</option>';
+  itemsActuales=[];renderItems();
+  if(!cid){document.getElementById('card-prods').style.display='none';return}
+  document.getElementById('card-prods').style.display='block';
+  const pc=PRECIOS.filter(p=>p.clienteId===cid);
+  if(!pc.length){sel.innerHTML='<option value="">Sin precios configurados</option>';return}
+  pc.forEach(pr=>{
+    const prod=PRODUCTOS.find(p=>p.id===pr.productoId);
+    if(prod)sel.innerHTML+=`<option value="${prod.id}">${prod.nombre} — ${fmt(pr.precio)}</option>`;
+  });
+}
+
+function agregarItem(){
+  const cid=document.getElementById('np-cliente').value;
+  const pid=document.getElementById('np-producto').value;
+  const qty=Math.max(1,parseInt(document.getElementById('np-cantidad').value)||1);
+  if(!pid)return;
+  const prod=PRODUCTOS.find(p=>p.id===pid);
+  const precioObj=PRECIOS.find(p=>p.clienteId===cid&&p.productoId===pid);
+  if(!prod||!precioObj)return;
+  const ex=itemsActuales.find(i=>i.productoId===pid);
+  if(ex){ex.cantidad+=qty}else{itemsActuales.push({productoId:pid,nombre:prod.nombre,unidad:prod.unidad,cantidad:qty,costo:prod.costo,precio:precioObj.precio})}
+  document.getElementById('np-cantidad').value=1;
+  renderItems();
+}
+
+function cambiarCantidad(idx,d){itemsActuales[idx].cantidad=Math.max(1,itemsActuales[idx].cantidad+d);renderItems()}
+function quitarItem(idx){itemsActuales.splice(idx,1);renderItems()}
+
+function renderItems(){
+  const el=document.getElementById('items-lista');
+  const footer=document.getElementById('items-footer');
+  if(!itemsActuales.length){el.innerHTML='<div style="padding:16px 0;color:var(--text-3);font-size:13px;text-align:center">Elegí productos del selector.</div>';footer.style.display='none';return}
+  let tc=0,tv=0;
+  el.innerHTML=itemsActuales.map((it,i)=>{
+    const c=it.costo*it.cantidad,v=it.precio*it.cantidad,m=(v-c)/v*100;
+    tc+=c;tv+=v;
+    return `<div class="item-row">
+      <div><div style="font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.nombre}</div><div style="font-size:11px;color:var(--text-3)">${it.unidad} · ${fmt(it.precio)} c/u</div></div>
+      <div class="qty-ctrl"><button onclick="cambiarCantidad(${i},-1)">−</button><span class="qty-num">${it.cantidad}</span><button onclick="cambiarCantidad(${i},1)">+</button></div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+        <span class="mono" style="font-size:13px">${fmt(v)}</span>
+        <span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${m.toFixed(0)}%</span>
+        <button class="btn btn-sm btn-danger" onclick="quitarItem(${i})" style="padding:4px 8px">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  footer.style.display='block';
+  const g=tv-tc,m=tv>0?(g/tv*100):0;
+  document.getElementById('tot-costo').textContent=fmt(tc);
+  document.getElementById('tot-venta').textContent=fmt(tv);
+  document.getElementById('tot-ganancia').textContent=fmt(g);
+  document.getElementById('tot-margen').textContent=pct(m);
+  document.getElementById('tot-margen').className='total-val '+(m>=40?'green':m>=20?'amber':'red');
+}
+
+function limpiarPedido(){
+  itemsActuales=[];
+  document.getElementById('np-cliente').value='';
+  document.getElementById('np-nota').value='';
+  document.getElementById('card-prods').style.display='none';
+  renderItems();
+}
+
+async function guardarPedido(){
+  const cid=document.getElementById('np-cliente').value;
+  const fecha=document.getElementById('np-fecha').value;
+  const nota=document.getElementById('np-nota').value.trim();
+  if(!cid||!fecha){toast('Seleccioná cliente y fecha','ae');return}
+  if(!itemsActuales.length){toast('Agregá al menos un producto','ae');return}
+  const cliente=CLIENTES.find(c=>c.id===cid);
+  const tc=itemsActuales.reduce((s,i)=>s+i.costo*i.cantidad,0);
+  const tv=itemsActuales.reduce((s,i)=>s+i.precio*i.cantidad,0);
+  const fechaCobro=cliente.pago==='credito'
+    ?new Date(new Date(fecha).getTime()+(cliente.diasCredito||22)*86400000).toISOString().split('T')[0]:fecha;
+  const pedido={id:'ped-'+Date.now(),clienteId:cid,clienteNombre:cliente.nombre,fecha,fechaCobro,nota,tipoPago:cliente.pago,items:JSON.parse(JSON.stringify(itemsActuales)),totalCosto:tc,totalVenta:tv,ganancia:tv-tc,estado:'pendiente'};
+  const btn=document.getElementById('btn-guardar');
+  btn.disabled=true;btn.textContent='Guardando...';
+  try{
+    await apiPost({action:'guardar',pedido});
+    pedidos.unshift(pedido);actualizarBadge();limpiarPedido();
+    document.getElementById('np-fecha').value=new Date().toISOString().split('T')[0];
+    toast('✓ Pedido guardado','as');
+  }catch(e){toast('Error al guardar','ae')}
+  btn.disabled=false;btn.innerHTML='✓ Guardar pedido';
+}
+
+// ── ORDEN ──────────────────────────────────────────────────────────────────
+function verOrden(pedId){
+  const p=pedidos.find(x=>x.id===pedId);
+  if(!p)return;
+  const rows=p.items.map(it=>`<tr>
+    <td style="padding:7px 10px;border-bottom:1px solid var(--border)">${it.nombre}</td>
+    <td style="padding:7px 10px;border-bottom:1px solid var(--border);text-align:center" class="mono">${it.cantidad}</td>
+    <td style="padding:7px 10px;border-bottom:1px solid var(--border);text-align:right" class="mono">${fmt(it.costo)}</td>
+    <td style="padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:600;color:var(--red)" class="mono">${fmt(it.costo*it.cantidad)}</td>
+  </tr>`).join('');
+  const m=p.totalVenta>0?(p.ganancia/p.totalVenta*100):0;
+  document.getElementById('orden-contenido').innerHTML=`
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      <div><div style="font-weight:600;font-size:14px">${p.clienteNombre}</div><div style="font-size:12px;color:var(--text-2)">Fecha: ${p.fecha}${p.nota?' · '+p.nota:''}</div></div>
+      <div style="text-align:right;font-size:12px;color:var(--text-2)">Cobro est.: <strong>${p.fechaCobro}</strong><br><span class="badge ${p.estado==='cobrado'?'bg':'ba'}" style="margin-top:4px">${p.estado==='cobrado'?'Cobrado':'Pendiente'}</span></div>
+    </div>
+    <table style="table-layout:fixed"><colgroup><col><col style="width:60px"><col style="width:110px"><col style="width:120px"></colgroup>
+    <thead><tr><th style="padding:6px 10px">Producto</th><th style="padding:6px 10px;text-align:center">Cant.</th><th style="padding:6px 10px;text-align:right">Costo/ud</th><th style="padding:6px 10px;text-align:right">Subtotal</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+      <span style="font-size:13px;color:var(--text-2)">Total a pagar a papá</span>
+      <span style="font-size:22px;font-weight:700;color:var(--red)" class="mono">${fmt(p.totalCosto)}</span>
+    </div>
+    <div style="display:flex;gap:20px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap;font-size:12px;color:var(--text-2)">
+      <span>Facturación: <strong>${fmt(p.totalVenta)}</strong></span>
+      <span>Ganancia: <strong style="color:var(--green)">${fmt(p.ganancia)}</strong></span>
+      <span>Margen: <strong>${pct(m)}</strong></span>
+    </div>`;
+  const ov=document.getElementById('orden-overlay');
+  ov.style.display='block';ov.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cerrarOrden(){document.getElementById('orden-overlay').style.display='none'}
+
+// ── MARCAR / ELIMINAR ──────────────────────────────────────────────────────
+async function marcarCobrado(pedId){
+  await apiPost({action:'actualizar',id:pedId,campo:'estado',valor:'cobrado'});
+  const p=pedidos.find(x=>x.id===pedId);
+  if(p)p.estado='cobrado';
+  actualizarBadge();renderHistorial();renderCobros();toast('Marcado como cobrado','as');
+}
+async function eliminarPedido(pedId){
+  if(!confirm('¿Eliminás este pedido?'))return;
+  await apiPost({action:'eliminar',id:pedId});
+  pedidos=pedidos.filter(p=>p.id!==pedId);
+  actualizarBadge();renderHistorial();renderCobros();toast('Pedido eliminado','ai');
+}
+
+// ── HISTORIAL ──────────────────────────────────────────────────────────────
+function renderHistorial(){
+  const el=document.getElementById('tabla-historial');
+  const cf=document.getElementById('filtro-cliente').value;
+  const ce=document.getElementById('filtro-estado').value;
+  let lista=pedidos.filter(p=>(!cf||p.clienteId===cf)&&(!ce||p.estado===ce));
+  if(!lista.length){el.innerHTML='<div class="empty">No hay pedidos con esos filtros.</div>';return}
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>Fecha</th><th>Cliente</th><th>Costo papá</th><th>Facturación</th><th>Ganancia</th><th>Margen</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${lista.map(p=>{
+      const m=p.totalVenta>0?(p.ganancia/p.totalVenta*100):0;
+      return `<tr>
+        <td class="mono" style="color:var(--text-2);font-size:12px">${p.fecha}</td>
+        <td style="font-weight:500">${p.clienteNombre}</td>
+        <td class="mono" style="color:var(--red)">${fmt(p.totalCosto)}</td>
+        <td class="mono">${fmt(p.totalVenta)}</td>
+        <td class="mono" style="color:var(--green);font-weight:600">${fmt(p.ganancia)}</td>
+        <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
+        <td><span class="badge ${p.estado==='cobrado'?'bg':'ba'}">${p.estado==='cobrado'?'Cobrado':'Pendiente'}</span></td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-sm" onclick="verOrden('${p.id}')">Orden</button>
+          ${p.estado==='pendiente'?`<button class="btn btn-sm" onclick="marcarCobrado('${p.id}')">✓</button>`:''}
+          <button class="btn btn-sm btn-danger" onclick="eliminarPedido('${p.id}')">✕</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+// ── COBROS ──────────────────────────────────────────────────────────────────
+function renderCobros(){
+  const el=document.getElementById('tabla-cobros');
+  const alertasEl=document.getElementById('alertas-cobros');
+  const hoy=new Date().toISOString().split('T')[0];
+  const pendientes=pedidos.filter(p=>p.estado==='pendiente'&&p.tipoPago==='credito');
+  const vencidos=pendientes.filter(p=>p.fechaCobro<=hoy);
+  alertasEl.innerHTML=vencidos.length?`<div class="alert aw">⚠ Tenés <strong>${vencidos.length}</strong> pedido${vencidos.length>1?'s':''} vencido${vencidos.length>1?'s':''} sin cobrar.</div>`:'';
+  if(!pendientes.length){el.innerHTML='<div class="empty">No hay cobros pendientes.</div>';return}
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>Fecha</th><th>Cliente</th><th>Cobro est.</th><th>Estado</th><th>Monto</th><th></th></tr></thead>
+    <tbody>${[...vencidos,...pendientes.filter(p=>p.fechaCobro>hoy)].map(p=>{
+      const dias=Math.round((new Date(p.fechaCobro)-new Date(hoy))/86400000);
+      const est=dias<0?`<span class="badge br">Vencido ${Math.abs(dias)}d</span>`:dias===0?`<span class="badge ba">Hoy</span>`:`<span class="badge bb">${dias}d</span>`;
+      return `<tr>
+        <td class="mono" style="font-size:12px;color:var(--text-2)">${p.fecha}</td>
+        <td style="font-weight:500">${p.clienteNombre}</td>
+        <td class="mono" style="font-size:12px">${p.fechaCobro}</td>
+        <td>${est}</td>
+        <td class="mono" style="font-weight:600">${fmt(p.totalVenta)}</td>
+        <td><div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="verOrden('${p.id}')">Ver</button>
+          <button class="btn btn-sm btn-primary" onclick="marcarCobrado('${p.id}')">✓ Cobrado</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+// ── RENTABILIDAD ───────────────────────────────────────────────────────────
+function renderRentabilidad(){
+  const el=document.getElementById('tabla-rentabilidad');
+  const mg=document.getElementById('metricas-top');
+  if(!pedidos.length){el.innerHTML='<div class="empty">Registrá pedidos para ver el análisis.</div>';mg.innerHTML='';return}
+  const tv=pedidos.reduce((s,p)=>s+Number(p.totalVenta),0);
+  const tg=pedidos.reduce((s,p)=>s+Number(p.ganancia),0);
+  const tc=pedidos.reduce((s,p)=>s+Number(p.totalCosto),0);
+  const m=tv>0?(tg/tv*100):0;
+  mg.innerHTML=`
+    <div class="metric"><div class="metric-label">Total facturado</div><div class="metric-value mono">${fmt(tv)}</div></div>
+    <div class="metric"><div class="metric-label">Costo a papá</div><div class="metric-value mono red">${fmt(tc)}</div></div>
+    <div class="metric"><div class="metric-label">Ganancia total</div><div class="metric-value mono green">${fmt(tg)}</div></div>
+    <div class="metric"><div class="metric-label">Margen promedio</div><div class="metric-value mono ${m>=40?'green':m>=20?'amber':'red'}">${pct(m)}</div></div>
+    <div class="metric"><div class="metric-label">Pedidos</div><div class="metric-value mono">${pedidos.length}</div></div>`;
+  const pc={};
+  pedidos.forEach(p=>{
+    if(!pc[p.clienteId])pc[p.clienteId]={nombre:p.clienteNombre,n:0,venta:0,costo:0,ganancia:0};
+    pc[p.clienteId].n++;pc[p.clienteId].venta+=Number(p.totalVenta);pc[p.clienteId].costo+=Number(p.totalCosto);pc[p.clienteId].ganancia+=Number(p.ganancia);
+  });
+  const sorted=Object.values(pc).sort((a,b)=>b.ganancia-a.ganancia);
+  el.innerHTML=`<div class="card" style="padding:0"><div class="tw"><table>
+    <thead><tr><th>#</th><th>Cliente</th><th style="text-align:center">Pedidos</th><th>Facturación</th><th>Costo papá</th><th>Ganancia</th><th>Margen</th><th>Ganancia/pedido</th></tr></thead>
+    <tbody>${sorted.map((c,i)=>{
+      const m=c.venta>0?(c.ganancia/c.venta*100):0;
+      return `<tr>
+        <td style="font-weight:600;color:var(--text-3)">#${i+1}</td>
+        <td style="font-weight:500">${c.nombre}</td>
+        <td style="text-align:center" class="mono">${c.n}</td>
+        <td class="mono">${fmt(c.venta)}</td>
+        <td class="mono" style="color:var(--red)">${fmt(c.costo)}</td>
+        <td class="mono" style="color:var(--green);font-weight:600">${fmt(c.ganancia)}</td>
+        <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
+        <td class="mono" style="color:var(--text-2)">${fmt(c.n>0?c.ganancia/c.n:0)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div></div>`;
+}
+
+// ── ADMIN ──────────────────────────────────────────────────────────────────
+function verificarClave(){
+  const pass=document.getElementById('admin-pass').value;
+  if(pass===ADMIN_KEY){
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-panel').style.display='block';
+    renderAdminProductos();
+    renderAdminClientes();
+    reinitAdminSelects();
+  }else{
+    document.getElementById('admin-error').style.display='block';
+  }
+}
+
+function showAdminTab(tab){
+  ['productos','clientes','precios'].forEach(t=>{
+    document.getElementById('admin-'+t).style.display=t===tab?'block':'none';
+    const btn=document.getElementById('atab-'+t);
+    btn.style.background=t===tab?'var(--accent)':'';
+    btn.style.color=t===tab?'#fff':'';
+    btn.style.borderColor=t===tab?'var(--accent)':'';
+  });
+  if(tab==='precios')reinitAdminSelects();
+}
+
+function reinitAdminSelects(){
+  const aprCli=document.getElementById('apr-cliente');
+  const filtro=document.getElementById('filtro-precios-cliente');
+  [aprCli,filtro].forEach(s=>{
+    s.innerHTML='<option value="">— Seleccioná —</option>';
+    CLIENTES.forEach(c=>s.innerHTML+=`<option value="${c.id}">${c.nombre}</option>`);
+  });
+  const aprProd=document.getElementById('apr-producto');
+  aprProd.innerHTML='<option value="">— Seleccioná —</option>';
+  PRODUCTOS.forEach(p=>aprProd.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`);
+}
+
+// ADMIN PRODUCTOS
+function renderAdminProductos(){
+  const el=document.getElementById('lista-admin-productos');
+  if(!PRODUCTOS.length){el.innerHTML='<div class="empty">No hay productos.</div>';return}
+  el.innerHTML=`<table>
+    <thead><tr><th>Nombre</th><th>Unidad</th><th>Costo papá</th><th></th></tr></thead>
+    <tbody>${PRODUCTOS.map(p=>`<tr>
+      <td style="font-weight:500">${p.nombre}</td>
+      <td style="color:var(--text-2)">${p.unidad}</td>
+      <td class="mono" style="color:var(--red)">${fmt(p.costo)}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-sm" onclick="editarProducto('${p.id}')">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminarProductoAdmin('${p.id}')">✕</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function guardarProductoAdmin(){
+  const nombre=document.getElementById('ap-nombre').value.trim();
+  const unidad=document.getElementById('ap-unidad').value.trim();
+  const costo=parseFloat(document.getElementById('ap-costo').value)||0;
+  const id=document.getElementById('ap-id').value;
+  if(!nombre||!unidad||!costo){toast('Completá todos los campos','ae');return}
+  if(id){
+    const p=PRODUCTOS.find(x=>x.id===id);
+    if(p){p.nombre=nombre;p.unidad=unidad;p.costo=costo}
+  }else{
+    PRODUCTOS.push({id:'p'+Date.now(),nombre,unidad,costo});
+  }
+  sincronizarCatalogo();
+  limpiarFormProducto();
+  renderAdminProductos();
+  reinitSelects();
+  toast('Producto guardado','as');
+}
+
+function editarProducto(id){
+  const p=PRODUCTOS.find(x=>x.id===id);
+  if(!p)return;
+  document.getElementById('ap-nombre').value=p.nombre;
+  document.getElementById('ap-unidad').value=p.unidad;
+  document.getElementById('ap-costo').value=p.costo;
+  document.getElementById('ap-id').value=id;
+  document.getElementById('btn-cancelar-prod').style.display='inline-flex';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function eliminarProductoAdmin(id){
+  if(!confirm('¿Eliminás este producto? También se eliminarán sus precios asociados.'))return;
+  PRODUCTOS=PRODUCTOS.filter(p=>p.id!==id);
+  PRECIOS=PRECIOS.filter(p=>p.productoId!==id);
+  sincronizarCatalogo();
+  renderAdminProductos();
+  reinitSelects();
+  toast('Producto eliminado','ai');
+}
+
+function limpiarFormProducto(){
+  document.getElementById('ap-nombre').value='';
+  document.getElementById('ap-unidad').value='';
+  document.getElementById('ap-costo').value='';
+  document.getElementById('ap-id').value='';
+  document.getElementById('btn-cancelar-prod').style.display='none';
+}
+
+// ADMIN CLIENTES
+function renderAdminClientes(){
+  const el=document.getElementById('lista-admin-clientes');
+  if(!CLIENTES.length){el.innerHTML='<div class="empty">No hay clientes.</div>';return}
+  el.innerHTML=`<table>
+    <thead><tr><th>Nombre</th><th>Zona</th><th>Pago</th><th></th></tr></thead>
+    <tbody>${CLIENTES.map(c=>`<tr>
+      <td style="font-weight:500">${c.nombre}</td>
+      <td style="color:var(--text-2)">${c.zona}</td>
+      <td><span class="badge ${c.pago==='credito'?'ba':'bg'}">${c.pago==='credito'?'Crédito '+c.diasCredito+'d':'Contado'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-sm" onclick="editarCliente('${c.id}')">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminarClienteAdmin('${c.id}')">✕</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function guardarClienteAdmin(){
+  const nombre=document.getElementById('ac-nombre').value.trim();
+  const zona=document.getElementById('ac-zona').value.trim();
+  const pago=document.getElementById('ac-pago').value;
+  const dias=parseInt(document.getElementById('ac-dias').value)||0;
+  const id=document.getElementById('ac-id').value;
+  if(!nombre){toast('Escribí el nombre del cliente','ae');return}
+  if(id){
+    const c=CLIENTES.find(x=>x.id===id);
+    if(c){c.nombre=nombre;c.zona=zona;c.pago=pago;c.diasCredito=dias}
+  }else{
+    CLIENTES.push({id:'c'+Date.now(),nombre,zona,pago,diasCredito:dias});
+  }
+  sincronizarCatalogo();
+  limpiarFormCliente();
+  renderAdminClientes();
+  reinitSelects();
+  toast('Cliente guardado','as');
+}
+
+function editarCliente(id){
+  const c=CLIENTES.find(x=>x.id===id);
+  if(!c)return;
+  document.getElementById('ac-nombre').value=c.nombre;
+  document.getElementById('ac-zona').value=c.zona;
+  document.getElementById('ac-pago').value=c.pago;
+  document.getElementById('ac-dias').value=c.diasCredito;
+  document.getElementById('ac-dias-wrap').style.display=c.pago==='credito'?'block':'none';
+  document.getElementById('ac-id').value=id;
+  document.getElementById('btn-cancelar-cli').style.display='inline-flex';
+}
+
+function eliminarClienteAdmin(id){
+  if(!confirm('¿Eliminás este cliente? También se eliminarán sus precios.'))return;
+  CLIENTES=CLIENTES.filter(c=>c.id!==id);
+  PRECIOS=PRECIOS.filter(p=>p.clienteId!==id);
+  sincronizarCatalogo();
+  renderAdminClientes();
+  reinitSelects();
+  toast('Cliente eliminado','ai');
+}
+
+function limpiarFormCliente(){
+  document.getElementById('ac-nombre').value='';
+  document.getElementById('ac-zona').value='';
+  document.getElementById('ac-pago').value='contado';
+  document.getElementById('ac-dias').value='15';
+  document.getElementById('ac-dias-wrap').style.display='none';
+  document.getElementById('ac-id').value='';
+  document.getElementById('btn-cancelar-cli').style.display='none';
+}
+
+// ADMIN PRECIOS
+function guardarPrecioAdmin(){
+  const cid=document.getElementById('apr-cliente').value;
+  const pid=document.getElementById('apr-producto').value;
+  const precio=parseFloat(document.getElementById('apr-precio').value)||0;
+  if(!cid||!pid||!precio){toast('Completá todos los campos','ae');return}
+  const ex=PRECIOS.find(p=>p.clienteId===cid&&p.productoId===pid);
+  if(ex){ex.precio=precio}else{PRECIOS.push({clienteId:cid,productoId:pid,precio})}
+  sincronizarCatalogo();
+  renderPreciosCliente();
+  document.getElementById('apr-precio').value='';
+  toast('Precio guardado','as');
+}
+
+function renderPreciosCliente(){
+  const cid=document.getElementById('filtro-precios-cliente').value||document.getElementById('apr-cliente').value;
+  if(!cid)return;
+  document.getElementById('filtro-precios-cliente').value=cid;
+  const el=document.getElementById('lista-precios-cliente');
+  const preciosCliente=PRECIOS.filter(p=>p.clienteId===cid);
+  if(!preciosCliente.length){el.innerHTML='<div class="empty">Este cliente no tiene precios configurados.</div>';return}
+  el.innerHTML=`<table>
+    <thead><tr><th>Producto</th><th>Costo papá</th><th>Precio venta</th><th>Margen</th><th></th></tr></thead>
+    <tbody>${preciosCliente.map(pr=>{
+      const prod=PRODUCTOS.find(p=>p.id===pr.productoId);
+      if(!prod)return '';
+      const m=(pr.precio-prod.costo)/pr.precio*100;
+      return `<tr>
+        <td style="font-weight:500">${prod.nombre}</td>
+        <td class="mono" style="color:var(--red)">${fmt(prod.costo)}</td>
+        <td class="mono">${fmt(pr.precio)}</td>
+        <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-sm" onclick="editarPrecio('${cid}','${pr.productoId}')">Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="eliminarPrecio('${cid}','${pr.productoId}')">✕</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function editarPrecio(cid,pid){
+  const pr=PRECIOS.find(p=>p.clienteId===cid&&p.productoId===pid);
+  if(!pr)return;
+  document.getElementById('apr-cliente').value=cid;
+  document.getElementById('apr-producto').value=pid;
+  document.getElementById('apr-precio').value=pr.precio;
+}
+
+function eliminarPrecio(cid,pid){
+  if(!confirm('¿Eliminás este precio?'))return;
+  PRECIOS=PRECIOS.filter(p=>!(p.clienteId===cid&&p.productoId===pid));
+  sincronizarCatalogo();
+  renderPreciosCliente();
+  toast('Precio eliminado','ai');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function toast(msg,tipo='as'){
+  const el=document.createElement('div');
+  el.className='toast '+tipo;
+  el.innerHTML=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+initApp();
+</script>
+</body>
+</html>
