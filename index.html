@@ -318,97 +318,98 @@ const fmt = n => '₡' + Math.round(n).toLocaleString('es-CR');
 const pct = n => (Math.round(n*10)/10).toFixed(1)+'%';
 
 let PRODUCTOS = [
-  {id:'p1',nombre:'Pan de queso',unidad:'unidad',costo:350},
-  {id:'p2',nombre:'Cangrejo SIN Relleno',unidad:'unidad',costo:162.35},
-  {id:'p3',nombre:'Cangrejo jamon/queso crema promo',unidad:'unidad',costo:553.31},
-  {id:'p4',nombre:'Taco QUESO PASTA',unidad:'unidad',costo:224.29},
-  {id:'p5',nombre:'Taco de POLLO',unidad:'unidad',costo:266.79},
-  {id:'p6',nombre:'Empanada de Pollo',unidad:'unidad',costo:266.89},
-  {id:'p7',nombre:'Pañuelo DUL/LECHE',unidad:'unidad',costo:301.79},
-  {id:'p8',nombre:'Enchilada Papa',unidad:'unidad',costo:189.29},
-  {id:'p9',nombre:'Chavitos',unidad:'unidad',costo:447.83},
-  {id:'p10',nombre:'Flauta Manzana',unidad:'unidad',costo:200.8},
-  {id:'p11',nombre:'Enchillada Pollo',unidad:'unidad',costo:266.79},
-  {id:'p12',nombre:'Enchilada Carne',unidad:'unidad',costo:266.89},
-  {id:'p13',nombre:'Arrollado Jamon/Queso',unidad:'unidad',costo:297.29},
-  {id:'p14',nombre:'Taco Carne mechada',unidad:'unidad',costo:266.89},
-  {id:'p15',nombre:'Pastel Carne Mechada',unidad:'unidad',costo:266.89},
-  {id:'p16',nombre:'Enchilada Pinto Caribeño',unidad:'unidad',costo:151.79},
-  {id:'p17',nombre:'Torta del Chavo',unidad:'unidad',costo:302.8},
-  {id:'p18',nombre:'Flauta Pastelera',unidad:'unidad',costo:178.56},
-  {id:'p19',nombre:'Pastel SIN relleno',unidad:'unidad',costo:102},
-  {id:'p20',nombre:'Alfajores',unidad:'unidad',costo:244},
-  {id:'p21',nombre:'Taco QUESO promo',unidad:'Promo x2',costo:448.59},
-  {id:'p22',nombre:'Taco de POLLO promo',unidad:'Promo x2',costo:533.59},
-  {id:'p23',nombre:'Empanada de Pollo promo',unidad:'Promo x2',costo:533.77},
-  {id:'p24',nombre:'Enchilada Papa promo',unidad:'Promo x2',costo:378.59},
-  {id:'p25',nombre:'Flauta Manzana promo',unidad:'Promo x2',costo:401.6},
-  {id:'p26',nombre:'Enchillada Pollo promo',unidad:'Promo x2',costo:533.59},
-  {id:'p27',nombre:'Enchilada Carne promo',unidad:'Promo x2',costo:533.77},
-  {id:'p28',nombre:'Arrollado Jamon/Queso promo',unidad:'Promo x2',costo:594.59},
-  {id:'p29',nombre:'Taco Carne mechada promo',unidad:'Promo x2',costo:533.77},
-  {id:'p30',nombre:'Pastel Carne Mechada promo',unidad:'Promo x2',costo:533.77},
-  {id:'p31',nombre:'Enchilada Pinto Caribeño promo',unidad:'Promo x2',costo:303.59},
-  {id:'p32',nombre:'Pan Pizza',unidad:'unidad',costo:481},
-  {id:'p33',nombre:'Baguette',unidad:'unidad',costo:220},
-  {id:'p34',nombre:'Dulce Piña',unidad:'unidad',costo:499.47},
-  {id:'p35',nombre:'Dulce Piña/QC',unidad:'unidad',costo:778.46},
-  {id:'p36',nombre:'Dulce Dulce Leche',unidad:'unidad',costo:606.24},
-  {id:'p37',nombre:'Dulce Pastelera',unidad:'unidad',costo:690.08},
-  {id:'p38',nombre:'Dulce Queso-Guaya',unidad:'unidad',costo:788.14},
-  {id:'p39',nombre:'Tamal Asado',unidad:'unidad',costo:300},
-  {id:'p40',nombre:'Tamal Elote',unidad:'unidad',costo:178},
-  {id:'p41',nombre:'Cocadas',unidad:'unidad',costo:45},
-  {id:'p42',nombre:'Caseros',unidad:'Paquete',costo:650},
-  {id:'p43',nombre:'Cocadas promo',unidad:'Promo x4',costo:180},
-  {id:'p44',nombre:'Piña Natillera',unidad:'unidad',costo:500},
-  {id:'p45',nombre:'Pan especies',unidad:'Promo x4',costo:180},
-  {id:'p46',nombre:'Tamal queso crema',unidad:'unidad',costo:380},
-  {id:'p47',nombre:'Galleta panaderia',unidad:'Paquete 12',costo:225},
-  {id:'p48',nombre:'Julietas',unidad:'Paquete 12',costo:350},
-  {id:'p49',nombre:'Galleta coco',unidad:'Paquete 12',costo:350},
-  {id:'p50',nombre:'Rosquillas',unidad:'Paquete 12',costo:350},
-  {id:'p51',nombre:'Bizcotelas',unidad:'Paquete 6',costo:150},
-  {id:'p52',nombre:'Pastel carne molida',unidad:'unidad',costo:232},
-  {id:'p53',nombre:'Pastel pollo',unidad:'unidad',costo:266.8},
-  {id:'p54',nombre:'Burrito Salsero',unidad:'unidad',costo:447},
-  {id:'p55',nombre:'Costilla guayaba',unidad:'unidad',costo:178},
-  {id:'p56',nombre:'Flauta Pastelera/Choco',unidad:'unidad',costo:200}
+  {id:'p1', nombre:'Pan de queso', unidad:'unidad', costo:350},
+  {id:'p2', nombre:'Cangrejo SIN Relleno', unidad:'unidad', costo:162.35},
+  {id:'p3', nombre:'Cangrejo jamon/queso crema promo', unidad:'unidad', costo:553.31},
+  {id:'p4', nombre:'Taco QUESO PASTA', unidad:'unidad', costo:224.29},
+  {id:'p5', nombre:'Taco de POLLO', unidad:'unidad', costo:266.79},
+  {id:'p6', nombre:'Empanada de Pollo', unidad:'unidad', costo:266.89},
+  {id:'p7', nombre:'Pañuelo DUL/LECHE', unidad:'unidad', costo:301.79},
+  {id:'p8', nombre:'Enchilada Papa', unidad:'unidad', costo:189.29},
+  {id:'p9', nombre:'Chavitos', unidad:'unidad', costo:447.83},
+  {id:'p10', nombre:'Flauta Manzana', unidad:'unidad', costo:200.8},
+  {id:'p11', nombre:'Enchillada Pollo', unidad:'unidad', costo:266.79},
+  {id:'p12', nombre:'Enchilada Carne', unidad:'unidad', costo:266.89},
+  {id:'p13', nombre:'Arrollado Jamon/Queso', unidad:'unidad', costo:297.29},
+  {id:'p14', nombre:'Taco Carne mechada', unidad:'unidad', costo:266.89},
+  {id:'p15', nombre:'Pastel Carne Mechada', unidad:'unidad', costo:266.89},
+  {id:'p16', nombre:'Enchilada Pinto Caribeño', unidad:'unidad', costo:151.79},
+  {id:'p17', nombre:'Torta del Chavo', unidad:'unidad', costo:302.8},
+  {id:'p18', nombre:'Flauta Pastelera', unidad:'unidad', costo:178.56},
+  {id:'p19', nombre:'Pastel SIN relleno', unidad:'unidad', costo:102},
+  {id:'p20', nombre:'Alfajores', unidad:'unidad', costo:244},
+  {id:'p21', nombre:'Taco QUESO promo', unidad:'Promo x2', costo:448.59},
+  {id:'p22', nombre:'Taco de POLLO promo', unidad:'Promo x2', costo:533.59},
+  {id:'p23', nombre:'Empanada de Pollo promo', unidad:'Promo x2', costo:533.77},
+  {id:'p24', nombre:'Enchilada Papa promo', unidad:'Promo x2', costo:378.59},
+  {id:'p25', nombre:'Flauta Manzana promo', unidad:'Promo x2', costo:401.6},
+  {id:'p26', nombre:'Enchillada Pollo promo', unidad:'Promo x2', costo:533.59},
+  {id:'p27', nombre:'Enchilada Carne promo', unidad:'Promo x2', costo:533.77},
+  {id:'p28', nombre:'Arrollado Jamon/Queso promo', unidad:'Promo x2', costo:594.59},
+  {id:'p29', nombre:'Taco Carne mechada promo', unidad:'Promo x2', costo:533.77},
+  {id:'p30', nombre:'Pastel Carne Mechada promo', unidad:'Promo x2', costo:533.77},
+  {id:'p31', nombre:'Enchilada Pinto Caribeño promo', unidad:'Promo x2', costo:303.59},
+  {id:'p32', nombre:'Pan Pizza', unidad:'unidad', costo:481},
+  {id:'p33', nombre:'Baguette', unidad:'unidad', costo:220},
+  {id:'p34', nombre:'Dulce Piña', unidad:'unidad', costo:499.47},
+  {id:'p35', nombre:'Dulce Piña/QC', unidad:'unidad', costo:778.46},
+  {id:'p36', nombre:'Dulce Dulce Leche', unidad:'unidad', costo:606.24},
+  {id:'p37', nombre:'Dulce Pastelera', unidad:'unidad', costo:690.08},
+  {id:'p38', nombre:'Dulce Queso-Guaya', unidad:'unidad', costo:788.14},
+  {id:'p39', nombre:'Tamal Asado', unidad:'unidad', costo:300},
+  {id:'p40', nombre:'Tamal Elote', unidad:'unidad', costo:178},
+  {id:'p41', nombre:'Cocadas', unidad:'unidad', costo:45},
+  {id:'p42', nombre:'Caseros', unidad:'Paquete', costo:650},
+  {id:'p43', nombre:'Cocadas promo', unidad:'Promo x4', costo:180},
+  {id:'p44', nombre:'Piña Natillera', unidad:'unidad', costo:500},
+  {id:'p45', nombre:'Pan especies', unidad:'Promo x4', costo:180},
+  {id:'p46', nombre:'Tamal queso crema', unidad:'unidad', costo:380},
+  {id:'p47', nombre:'Galleta panaderia', unidad:'Paquete 12', costo:225},
+  {id:'p48', nombre:'Julietas', unidad:'Paquete 12', costo:350},
+  {id:'p49', nombre:'Galleta coco', unidad:'Paquete 12', costo:350},
+  {id:'p50', nombre:'Rosquillas', unidad:'Paquete 12', costo:350},
+  {id:'p51', nombre:'Bizcotelas', unidad:'Paquete 6', costo:150},
+  {id:'p52', nombre:'Pastel carne molida', unidad:'unidad', costo:232},
+  {id:'p53', nombre:'Pastel pollo', unidad:'unidad', costo:266.8},
+  {id:'p54', nombre:'Burrito Salsero', unidad:'unidad', costo:447},
+  {id:'p55', nombre:'Costilla guayaba', unidad:'unidad', costo:178},
+  {id:'p56', nombre:'Flauta Pastelera/Choco', unidad:'unidad', costo:200}
 ];
 let CLIENTES = [
-  {id:'c1',nombre:'Eduardo UNA Heredia',zona:'Heredia centro',pago:'credito',diasCredito:22},
-  {id:'c2',nombre:'Vanesa',zona:'San Jose, Estacion Atlantico',pago:'contado',diasCredito:0},
-  {id:'c3',nombre:'Michael',zona:'San Jose, Guadalupe',pago:'contado',diasCredito:0},
-  {id:'c4',nombre:'Paqueteria y Reparto',zona:'-',pago:'credito',diasCredito:22},
-  {id:'c5',nombre:'Carlos Mercadito Verde',zona:'Sabanilla',pago:'contado',diasCredito:0}
+  {id:'c1779940698921', nombre:'Victoria', zona:'Calle Blancos, Punto Pan', pago:'contado', diasCredito:0},
+  {id:'c1779940747286', nombre:'Eduardo Sodas UNA', zona:'Heredia', pago:'credito', diasCredito:15},
+  {id:'c1779940758049', nombre:'Michael', zona:'Guadalupe', pago:'contado', diasCredito:0},
+  {id:'c1779940770678', nombre:'Vanesa', zona:'San Jose centro', pago:'contado', diasCredito:0},
+  {id:'c1779940796704', nombre:'Carlos Mercadito Verde', zona:'Sabanilla', pago:'contado', diasCredito:0}
 ];
 let PRECIOS = [
-  {clienteId:'c1',productoId:'p2',precio:575},
-  {clienteId:'c1',productoId:'p4',precio:575},
-  {clienteId:'c1',productoId:'p6',precio:575},
-  {clienteId:'c1',productoId:'p7',precio:575},
-  {clienteId:'c1',productoId:'p8',precio:575},
-  {clienteId:'c1',productoId:'p19',precio:575},
-  {clienteId:'c1',productoId:'p18',precio:575},
-  {clienteId:'c1',productoId:'p33',precio:575},
-  {clienteId:'c1',productoId:'p20',precio:575},
-  {clienteId:'c3',productoId:'p41',precio:200},
-  {clienteId:'c5',productoId:'p52',precio:475},
-  {clienteId:'c5',productoId:'p53',precio:475},
-  {clienteId:'c5',productoId:'p8',precio:450},
-  {clienteId:'c5',productoId:'p5',precio:475},
-  {clienteId:'c5',productoId:'p4',precio:475},
-  {clienteId:'c5',productoId:'p9',precio:800},
-  {clienteId:'c5',productoId:'p54',precio:800},
-  {clienteId:'c5',productoId:'p55',precio:450},
-  {clienteId:'c5',productoId:'p18',precio:450},
-  {clienteId:'c5',productoId:'p10',precio:450},
-  {clienteId:'c5',productoId:'p56',precio:475}
+  {clienteId:'c1779940747286', productoId:'p2', precio:575},
+  {clienteId:'c1779940747286', productoId:'p4', precio:575},
+  {clienteId:'c1779940747286', productoId:'p6', precio:575},
+  {clienteId:'c1779940747286', productoId:'p7', precio:575},
+  {clienteId:'c1779940747286', productoId:'p8', precio:575},
+  {clienteId:'c1779940747286', productoId:'p19', precio:575},
+  {clienteId:'c1779940747286', productoId:'p18', precio:575},
+  {clienteId:'c1779940747286', productoId:'p33', precio:575},
+  {clienteId:'c1779940747286', productoId:'p20', precio:575},
+  {clienteId:'c1779940758049', productoId:'p41', precio:200},
+  {clienteId:'c1779940796704', productoId:'p52', precio:475},
+  {clienteId:'c1779940796704', productoId:'p53', precio:475},
+  {clienteId:'c1779940796704', productoId:'p8', precio:450},
+  {clienteId:'c1779940796704', productoId:'p5', precio:475},
+  {clienteId:'c1779940796704', productoId:'p4', precio:475},
+  {clienteId:'c1779940796704', productoId:'p9', precio:800},
+  {clienteId:'c1779940796704', productoId:'p54', precio:800},
+  {clienteId:'c1779940796704', productoId:'p55', precio:450},
+  {clienteId:'c1779940796704', productoId:'p18', precio:450},
+  {clienteId:'c1779940796704', productoId:'p10', precio:450},
+  {clienteId:'c1779940796704', productoId:'p56', precio:475}
 ];
 
 let pedidos = [];
 let itemsActuales = [];
 let catalogoCargado = false;
+let catalogoSincronizado = false;
 
 // ── SYNC ──────────────────────────────────────────────────────────────────
 function setSyncStatus(e,t){
@@ -446,14 +447,21 @@ async function cargarPedidos(mostrarToast=false){
 async function cargarCatalogo(){
   try{
     const d=await jsonp(SCRIPT_URL+'?tipo=catalogo');
-    if(d.ok&&d.catalogo){
+    if(d.ok&&d.catalogo&&d.catalogo.productos&&d.catalogo.productos.length>0){
       PRODUCTOS=d.catalogo.productos;
       CLIENTES=d.catalogo.clientes;
       PRECIOS=d.catalogo.precios;
       catalogoCargado=true;
       reinitSelects();
+    } else {
+      // Catalogo vacio en Sheets, sincronizar datos locales
+      await sincronizarCatalogo();
+      catalogoCargado=true;
+      reinitSelects();
     }
-  }catch(e){}
+  }catch(e){
+    reinitSelects();
+  }
 }
 
 async function sincronizarCatalogo(){
