@@ -520,7 +520,10 @@ function apiPost(body){
 async function cargarPedidos(mostrarToast=false){
   setSyncStatus('loading','Sincronizando...');
   try{
-    const d=await jsonp(SCRIPT_URL+'?tipo=pedidos');
+    const d=await Promise.race([
+      jsonp(SCRIPT_URL+'?tipo=pedidos'),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))
+    ]);
     if(d.ok){pedidos=d.pedidos||[];setSyncStatus('ok','Sincronizado');actualizarBadge();if(mostrarToast)toast('Pedidos actualizados','as');}
     else setSyncStatus('error','Error al cargar');
   }catch(e){setSyncStatus('error','Sin conexión');if(mostrarToast)toast('Sin conexión','ae');}
@@ -1190,16 +1193,22 @@ let gastos = [];
 
 async function cargarPagos(){
   try{
-    const d = await jsonp(SCRIPT_URL+'?tipo=pagos');
+    const d = await Promise.race([
+      jsonp(SCRIPT_URL+'?tipo=pagos'),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+    ]);
     if(d.ok) pagosPapa = d.pagos||[];
-  }catch(e){}
+  }catch(e){ pagosPapa = []; }
 }
 
 async function cargarGastos(){
   try{
-    const d = await jsonp(SCRIPT_URL+'?tipo=gastos');
+    const d = await Promise.race([
+      jsonp(SCRIPT_URL+'?tipo=gastos'),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+    ]);
     if(d.ok) gastos = d.gastos||[];
-  }catch(e){}
+  }catch(e){ gastos = []; }
 }
 
 // ── PAGOS A PAPÁ ──────────────────────────────────────────────────────────
