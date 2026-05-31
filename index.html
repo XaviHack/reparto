@@ -532,12 +532,8 @@ function jsonp(url, timeoutMs=12000){
 }
 
 function apiPost(body){
-  return fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type': 'text/plain'},
-    body: JSON.stringify(body)
-  }).then(() => ({ok: true})).catch(() => ({ok: true}));
+  const encoded = encodeURIComponent(JSON.stringify(body));
+  return jsonp(SCRIPT_URL + '?action_data=' + encoded);
 }
 
 async function cargarPedidos(mostrarToast=false){
@@ -1291,10 +1287,8 @@ async function registrarPagoPapa(){
   const pago = { id:'pago-'+Date.now(), fecha, ref, nota, pedidoIds, total };
   try {
     toast('Guardando...','ai');
-    await apiPost({action:'guardarPago', pago});
-    // Wait for Sheets to process, then reload
-    await new Promise(r=>setTimeout(r,2500));
-    await cargarPagos();
+    const res1 = await apiPost({action:'guardarPago', pago});
+    if(res1.ok) await cargarPagos();
     document.getElementById('pp-ref').value='';
     document.getElementById('pp-nota').value='';
     renderPagosPapa();
@@ -1354,9 +1348,8 @@ async function agregarGasto(){
   const gasto = { id:'gasto-'+Date.now(), tipo, fecha, monto, desc, ref };
   try {
     toast('Guardando...','ai');
-    await apiPost({action:'guardarGasto', gasto});
-    await new Promise(r=>setTimeout(r,2500));
-    await cargarGastos();
+    const res2 = await apiPost({action:'guardarGasto', gasto});
+    if(res2.ok) await cargarGastos();
     document.getElementById('gasto-monto').value='';
     document.getElementById('gasto-desc').value='';
     document.getElementById('gasto-ref').value='';
