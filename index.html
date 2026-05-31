@@ -532,8 +532,12 @@ function jsonp(url, timeoutMs=12000){
 }
 
 function apiPost(body){
-  return fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(body)})
-    .then(()=>{{}return{ok:true}});
+  return fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'text/plain'},
+    body: JSON.stringify(body)
+  }).then(() => ({ok: true})).catch(() => ({ok: true}));
 }
 
 async function cargarPedidos(mostrarToast=false){
@@ -1286,12 +1290,15 @@ async function registrarPagoPapa(){
   if(!pedidoIds.length){ alert('Esos pedidos ya están pagados'); return; }
   const pago = { id:'pago-'+Date.now(), fecha, ref, nota, pedidoIds, total };
   try {
+    toast('Guardando...','ai');
     await apiPost({action:'guardarPago', pago});
-    pagosPapa.unshift(pago);
+    // Wait for Sheets to process, then reload
+    await new Promise(r=>setTimeout(r,2500));
+    await cargarPagos();
     document.getElementById('pp-ref').value='';
     document.getElementById('pp-nota').value='';
     renderPagosPapa();
-    toast('Pago a papá registrado','as');
+    toast('✓ Pago a papá registrado','as');
   } catch(e) { toast('Error al guardar pago','ae'); }
 }
 
@@ -1346,13 +1353,15 @@ async function agregarGasto(){
   if(!monto){ toast('Ingresá un monto','ae'); return; }
   const gasto = { id:'gasto-'+Date.now(), tipo, fecha, monto, desc, ref };
   try {
+    toast('Guardando...','ai');
     await apiPost({action:'guardarGasto', gasto});
-    gastos.unshift(gasto);
+    await new Promise(r=>setTimeout(r,2500));
+    await cargarGastos();
     document.getElementById('gasto-monto').value='';
     document.getElementById('gasto-desc').value='';
     document.getElementById('gasto-ref').value='';
     renderGastos();
-    toast('Gasto registrado','as');
+    toast('✓ Gasto registrado','as');
   } catch(e) { toast('Error al guardar gasto','ae'); }
 }
 
