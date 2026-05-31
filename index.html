@@ -1243,7 +1243,7 @@ function renderPagosPapa(){
         <label for="pp-chk-${p.id}" style="flex:1;cursor:pointer;font-size:13px">
           <span style="font-weight:500">${p.clienteNombre}</span>
           <span style="color:var(--text-2);margin:0 6px">·</span>
-          <span style="color:var(--text-2)">${p.fecha}</span>
+          <span style="color:var(--text-2)">${String(p.fecha).split('T')[0]}</span>
           ${p.nota?`<span style="color:var(--text-3);margin-left:6px">— ${p.nota}</span>`:''}
         </label>
         <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--red);font-size:13px">${fmt(p.totalCosto)}</span>
@@ -1288,10 +1288,13 @@ async function registrarPagoPapa(){
   try {
     toast('Guardando...','ai');
     const res1 = await apiPost({action:'guardarPago', pago});
-    if(res1.ok) await cargarPagos();
+    if(res1.ok){
+      await Promise.all([cargarPagos(), cargarPedidos()]);
+    }
     document.getElementById('pp-ref').value='';
     document.getElementById('pp-nota').value='';
     renderPagosPapa();
+    actualizarBadge();
     toast('✓ Pago a papá registrado','as');
   } catch(e) { toast('Error al guardar pago','ae'); }
 }
@@ -1302,7 +1305,7 @@ function renderHistorialPagosPapa(){
   el.innerHTML=`<div class="tw"><table>
     <thead><tr><th>Fecha</th><th>Referencia</th><th>Pedidos</th><th>Total pagado</th><th>Nota</th><th></th></tr></thead>
     <tbody>${pagosPapa.map(p=>`<tr>
-      <td class="mono" style="font-size:12px;color:var(--text-2)">${p.fecha}</td>
+      <td class="mono" style="font-size:12px;color:var(--text-2)">${String(p.fecha).split('T')[0]}</td>
       <td class="mono" style="font-size:12px">${p.ref||'—'}</td>
       <td style="text-align:center">${p.pedidoIds.length}</td>
       <td class="mono" style="font-weight:600;color:var(--red)">${fmt(p.total)}</td>
