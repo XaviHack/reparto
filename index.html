@@ -1248,7 +1248,7 @@ function actualizarTotalPago(){
   document.getElementById('pp-count').textContent = count;
 }
 
-function registrarPagoPapa(){
+async function registrarPagoPapa(){
   const fecha = document.getElementById('pp-fecha').value;
   const ref = document.getElementById('pp-ref').value.trim();
   const nota = document.getElementById('pp-nota').value.trim();
