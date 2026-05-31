@@ -501,12 +501,31 @@ function setSyncStatus(e,t){
   el.style.color=e==='ok'?'var(--green)':e==='error'?'var(--red)':'var(--amber)';
 }
 
-function jsonp(url){
+function jsonp(url, timeoutMs=12000){
   return new Promise((res,rej)=>{
-    const cb='cb_'+Date.now();
+    const cb='cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
     const s=document.createElement('script');
-    window[cb]=d=>{delete window[cb];document.body.removeChild(s);res(d)};
-    s.onerror=()=>{delete window[cb];try{document.body.removeChild(s)}catch(e){}rej(new Error('Network error'))};
+    let done=false;
+    const timer=setTimeout(()=>{
+      if(done)return; done=true;
+      delete window[cb];
+      try{document.body.removeChild(s)}catch(e){}
+      rej(new Error('timeout'));
+    }, timeoutMs);
+    window[cb]=d=>{
+      if(done)return; done=true;
+      clearTimeout(timer);
+      delete window[cb];
+      try{document.body.removeChild(s)}catch(e){}
+      res(d);
+    };
+    s.onerror=()=>{
+      if(done)return; done=true;
+      clearTimeout(timer);
+      delete window[cb];
+      try{document.body.removeChild(s)}catch(e){}
+      rej(new Error('Network error'));
+    };
     s.src=url+(url.includes('?')?'&':'?')+'callback='+cb+'&t='+Date.now();
     document.body.appendChild(s);
   });
@@ -520,10 +539,7 @@ function apiPost(body){
 async function cargarPedidos(mostrarToast=false){
   setSyncStatus('loading','Sincronizando...');
   try{
-    const d=await Promise.race([
-      jsonp(SCRIPT_URL+'?tipo=pedidos'),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))
-    ]);
+    const d=await jsonp(SCRIPT_URL+'?tipo=pedidos');
     if(d.ok){pedidos=d.pedidos||[];setSyncStatus('ok','Sincronizado');actualizarBadge();if(mostrarToast)toast('Pedidos actualizados','as');}
     else setSyncStatus('error','Error al cargar');
   }catch(e){setSyncStatus('error','Sin conexión');if(mostrarToast)toast('Sin conexión','ae');}
@@ -1193,21 +1209,17 @@ let gastos = [];
 
 async function cargarPagos(){
   try{
-    const d = await Promise.race([
-      jsonp(SCRIPT_URL+'?tipo=pagos'),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
-    ]);
+    const d = await jsonp(SCRIPT_URL+'?tipo=pagos');
     if(d.ok) pagosPapa = d.pagos||[];
+    else pagosPapa=[];
   }catch(e){ pagosPapa = []; }
 }
 
 async function cargarGastos(){
   try{
-    const d = await Promise.race([
-      jsonp(SCRIPT_URL+'?tipo=gastos'),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
-    ]);
+    const d = await jsonp(SCRIPT_URL+'?tipo=gastos');
     if(d.ok) gastos = d.gastos||[];
+    else gastos=[];
   }catch(e){ gastos = []; }
 }
 
