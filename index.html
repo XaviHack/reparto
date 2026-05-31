@@ -130,9 +130,15 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
     </div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Análisis</div>
+    <div class="nav-label">Finanzas</div>
+    <div class="nav-item" onclick="goPage('pagos-papa',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Pagos a papá
+    </div>
+    <div class="nav-item" onclick="goPage('gastos',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Gastos
+    </div>
     <div class="nav-item" onclick="goPage('rentabilidad',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Rentabilidad
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Rentabilidad neta
     </div>
   </div>
   <div class="nav-section">
@@ -186,7 +192,11 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
   <div class="page-sub">Todos los pedidos registrados</div>
   <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
     <select id="filtro-cliente" onchange="renderHistorial()" style="width:auto;min-width:180px"><option value="">Todos los clientes</option></select>
-    <select id="filtro-estado" onchange="renderHistorial()" style="width:auto"><option value="">Todos</option><option value="pendiente">Pendiente</option><option value="cobrado">Cobrado</option></select>
+    <select id="filtro-estado" onchange="renderHistorial()" style="width:auto">
+  <option value="">Todos</option>
+  <option value="pendiente">Cliente: pendiente</option>
+  <option value="cobrado">Cliente: cobrado</option>
+</select>
     <button class="btn btn-sm" onclick="cargarPedidos(true)" style="margin-left:auto">↻ Actualizar</button>
   </div>
   <div class="card" style="padding:0"><div id="tabla-historial"><div class="empty">Cargando...</div></div></div>
@@ -202,8 +212,15 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
 
 <!-- RENTABILIDAD -->
 <div id="page-rentabilidad" class="page">
-  <div class="page-title">Rentabilidad</div>
-  <div class="page-sub">Análisis de ganancia por cliente</div>
+  <div class="page-title">Rentabilidad neta</div>
+  <div class="page-sub">Ganancia real después de gastos operativos</div>
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <button class="btn btn-sm btn-primary" onclick="document.getElementById('periodo-selector').value='semana';renderRentabilidad()">Última semana</button>
+    <button class="btn btn-sm" onclick="document.getElementById('periodo-selector').value='quincena';renderRentabilidad()">Quincena</button>
+    <button class="btn btn-sm" onclick="document.getElementById('periodo-selector').value='mes';renderRentabilidad()">Mes</button>
+    <button class="btn btn-sm" onclick="document.getElementById('periodo-selector').value='todo';renderRentabilidad()">Todo</button>
+    <select id="periodo-selector" style="display:none"></select>
+  </div>
   <div class="metrics" id="metricas-top"></div>
   <div id="tabla-rentabilidad"><div class="empty">Registrá pedidos para ver el análisis.</div></div>
 </div>
@@ -294,6 +311,70 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div id="lista-precios-cliente"><div class="empty">Seleccioná un cliente para ver sus precios.</div></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- PAGOS A PAPA -->
+<div id="page-pagos-papa" class="page">
+  <div class="page-title">Pagos a papá</div>
+  <div class="page-sub">Registrá pagos globales seleccionando los pedidos que cubrís</div>
+  <div class="card">
+    <div class="card-title">Nuevo pago a papá</div>
+    <div class="form-grid g3" style="margin-bottom:16px">
+      <div><label>Fecha del pago</label><input type="date" id="pp-fecha"/></div>
+      <div><label>Referencia Sinpe</label><input type="text" id="pp-ref" placeholder="Ej: 123456789"/></div>
+      <div><label>Nota (opcional)</label><input type="text" id="pp-nota" placeholder="Ej: Quincena mayo"/></div>
+    </div>
+    <div class="card-title" style="margin-bottom:8px">Seleccioná los pedidos que cubrís</div>
+    <div id="pp-pedidos-lista"><div class="empty" style="padding:1rem">No hay pedidos con costo pendiente de pago a papá.</div></div>
+    <div id="pp-footer" style="display:none">
+      <hr class="div">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div style="font-size:13px;color:var(--text-2)">Pedidos seleccionados: <strong id="pp-count">0</strong></div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="text-align:right">
+            <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Total a pagar</div>
+            <div style="font-size:22px;font-weight:700;color:var(--red);font-family:'DM Mono',monospace" id="pp-total">₡0</div>
+          </div>
+          <button class="btn btn-primary" onclick="registrarPagoPapa()">✓ Registrar pago</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="padding:0">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Historial de pagos a papá</div>
+    <div id="pp-historial"><div class="empty">No hay pagos registrados.</div></div>
+  </div>
+</div>
+
+<!-- GASTOS -->
+<div id="page-gastos" class="page">
+  <div class="page-title">Gastos</div>
+  <div class="page-sub">Registrá reposteros, luz y otros gastos variables</div>
+  <div class="card">
+    <div class="card-title">Agregar gasto</div>
+    <div class="form-grid g3" style="margin-bottom:12px">
+      <div><label>Tipo de gasto</label>
+        <select id="gasto-tipo" onchange="toggleGastoTipo()">
+          <option value="repostero1">Repostero 1 (₡75,000 quincena)</option>
+          <option value="repostero2">Repostero 2 (₡62,500 quincena)</option>
+          <option value="luz">Luz (variable)</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div><label>Fecha</label><input type="date" id="gasto-fecha"/></div>
+      <div><label>Monto (₡)</label><input type="number" id="gasto-monto" min="0" placeholder="0"/></div>
+    </div>
+    <div class="form-grid g2" style="margin-bottom:12px">
+      <div id="gasto-desc-wrap"><label>Descripción</label><input type="text" id="gasto-desc" placeholder="Ej: Quincena 1 mayo"/></div>
+      <div><label>Referencia (opcional)</label><input type="text" id="gasto-ref" placeholder="Ej: Sinpe 123456"/></div>
+    </div>
+    <button class="btn btn-primary" onclick="agregarGasto()">+ Registrar gasto</button>
+  </div>
+  <div class="metrics" id="gastos-metrics"></div>
+  <div class="card" style="padding:0">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Historial de gastos</div>
+    <div id="gastos-historial"><div class="empty">No hay gastos registrados.</div></div>
   </div>
 </div>
 
@@ -498,8 +579,10 @@ function goPage(id,el){
   document.getElementById('sidebar').classList.remove('open');
   if(id==='historial'){cargarPedidos().then(renderHistorial)}
   if(id==='cobros'){cargarPedidos().then(renderCobros)}
-  if(id==='rentabilidad'){cargarPedidos().then(renderRentabilidad)}
+  if(id==='rentabilidad'){Promise.all([cargarPedidos(),cargarPagos(),cargarGastos()]).then(()=>renderRentabilidad())}
   if(id==='admin')renderAdminProductos();
+  if(id==='pagos-papa'){Promise.all([cargarPedidos(),cargarPagos()]).then(()=>renderPagosPapa())}
+  if(id==='gastos'){cargarGastos().then(()=>renderGastos())}
 }
 
 function actualizarBadge(){
@@ -597,7 +680,7 @@ async function guardarPedido(){
   const tv=itemsActuales.reduce((s,i)=>s+i.precio*i.cantidad,0);
   const fechaCobro=cliente.pago==='credito'
     ?new Date(new Date(fecha).getTime()+(cliente.diasCredito||22)*86400000).toISOString().split('T')[0]:fecha;
-  const pedido={id:'ped-'+Date.now(),clienteId:cid,clienteNombre:cliente.nombre,fecha,fechaCobro,nota,tipoPago:cliente.pago,items:JSON.parse(JSON.stringify(itemsActuales)),totalCosto:tc,totalVenta:tv,ganancia:tv-tc,estado:'pendiente'};
+  const pedido={id:'ped-'+Date.now(),clienteId:cid,clienteNombre:cliente.nombre,fecha,fechaCobro,nota,tipoPago:cliente.pago,items:JSON.parse(JSON.stringify(itemsActuales)),totalCosto:tc,totalVenta:tv,ganancia:tv-tc,estado:'pendiente',estadoPapa:'sin_pagar'};
   const btn=document.getElementById('btn-guardar');
   btn.disabled=true;btn.textContent='Guardando...';
   try{
@@ -678,6 +761,13 @@ async function marcarCobrado(pedId){
   if(p)p.estado='cobrado';
   actualizarBadge();renderHistorial();renderCobros();toast('Marcado como cobrado','as');
 }
+async function marcarPagadoPapa(pedId){
+  await apiPost({action:'actualizar',id:pedId,campo:'estadoPapa',valor:'pagado'});
+  const p=pedidos.find(x=>x.id===pedId);
+  if(p)p.estadoPapa='pagado';
+  renderHistorial();toast('Marcado como pagado a papá','as');
+}
+
 async function eliminarPedido(pedId){
   if(!confirm('¿Eliminás este pedido?'))return;
   await apiPost({action:'eliminar',id:pedId});
@@ -693,9 +783,27 @@ function renderHistorial(){
   let lista=pedidos.filter(p=>(!cf||p.clienteId===cf)&&(!ce||p.estado===ce));
   if(!lista.length){el.innerHTML='<div class="empty">No hay pedidos con esos filtros.</div>';return}
   el.innerHTML=`<div class="tw"><table>
-    <thead><tr><th>Fecha</th><th>Cliente</th><th>Costo papá</th><th>Facturación</th><th>Ganancia</th><th>Margen</th><th>Estado</th><th></th></tr></thead>
+    <thead><tr>
+      <th>Fecha</th><th>Cliente</th><th>Costo papá</th><th>Facturación</th><th>Ganancia</th><th>Margen</th>
+      <th style="text-align:center">💰 Cliente</th>
+      <th style="text-align:center">🏦 Papá</th>
+      <th></th>
+    </tr></thead>
     <tbody>${lista.map(p=>{
       const m=p.totalVenta>0?(p.ganancia/p.totalVenta*100):0;
+      const estadoPapa = p.estadoPapa||'sin_pagar';
+      const badgeCliente = p.estado==='cobrado'
+        ? `<span class="badge bg">✓ Cobrado</span>`
+        : `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <span class="badge ba">Pendiente</span>
+            <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="marcarCobrado('${p.id}')">Marcar cobrado</button>
+           </div>`;
+      const badgePapa = estadoPapa==='pagado'
+        ? `<span class="badge bg">✓ Pagado</span>`
+        : `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <span class="badge br">Sin pagar</span>
+            <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="marcarPagadoPapa('${p.id}')">Marcar pagado</button>
+           </div>`;
       return `<tr>
         <td class="mono" style="color:var(--text-2);font-size:12px">${p.fecha}</td>
         <td style="font-weight:500">${p.clienteNombre}</td>
@@ -703,10 +811,10 @@ function renderHistorial(){
         <td class="mono">${fmt(p.totalVenta)}</td>
         <td class="mono" style="color:var(--green);font-weight:600">${fmt(p.ganancia)}</td>
         <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
-        <td><span class="badge ${p.estado==='cobrado'?'bg':'ba'}">${p.estado==='cobrado'?'Cobrado':'Pendiente'}</span></td>
+        <td style="text-align:center">${badgeCliente}</td>
+        <td style="text-align:center">${badgePapa}</td>
         <td><div style="display:flex;gap:4px">
           <button class="btn btn-sm" onclick="verOrden('${p.id}')">Orden</button>
-          ${p.estado==='pendiente'?`<button class="btn btn-sm" onclick="marcarCobrado('${p.id}')">✓</button>`:''}
           <button class="btn btn-sm btn-danger" onclick="eliminarPedido('${p.id}')">✕</button>
         </div></td>
       </tr>`;
@@ -748,38 +856,92 @@ function renderRentabilidad(){
   const el=document.getElementById('tabla-rentabilidad');
   const mg=document.getElementById('metricas-top');
   if(!pedidos.length){el.innerHTML='<div class="empty">Registrá pedidos para ver el análisis.</div>';mg.innerHTML='';return}
-  const tv=pedidos.reduce((s,p)=>s+Number(p.totalVenta),0);
-  const tg=pedidos.reduce((s,p)=>s+Number(p.ganancia),0);
-  const tc=pedidos.reduce((s,p)=>s+Number(p.totalCosto),0);
+
+  // Period filter
+  const periodo = document.getElementById('periodo-selector')?.value || 'todo';
+  const hoy = new Date();
+  let desde = null;
+  if(periodo==='semana'){ desde=new Date(hoy); desde.setDate(hoy.getDate()-7); }
+  else if(periodo==='quincena'){ desde=new Date(hoy); desde.setDate(hoy.getDate()-15); }
+  else if(periodo==='mes'){ desde=new Date(hoy); desde.setMonth(hoy.getMonth()-1); }
+
+  const filtrarFecha = p => !desde || new Date(p.fecha) >= desde;
+  const filtrarFechaGasto = g => !desde || new Date(g.fecha) >= desde;
+  const filtrarFechaPago = p => !desde || new Date(p.fecha) >= desde;
+
+  const pedFiltrados = pedidos.filter(filtrarFecha);
+  const gastosFiltrados = gastos.filter(filtrarFechaGasto);
+  const pagosFiltrados = pagosPapa.filter(filtrarFechaPago);
+
+  const tv=pedFiltrados.reduce((s,p)=>s+Number(p.totalVenta),0);
+  const tg=pedFiltrados.reduce((s,p)=>s+Number(p.ganancia),0);
+  const tc=pedFiltrados.reduce((s,p)=>s+Number(p.totalCosto),0);
+  const totalGastos=gastosFiltrados.reduce((s,g)=>s+g.monto,0);
+  const totalPagadoPapa=pagosFiltrados.reduce((s,p)=>s+p.total,0);
+  const gananciaNetaReal=tg-totalGastos;
   const m=tv>0?(tg/tv*100):0;
+  const mNeto=tv>0?(gananciaNetaReal/tv*100):0;
+
   mg.innerHTML=`
-    <div class="metric"><div class="metric-label">Total facturado</div><div class="metric-value mono">${fmt(tv)}</div></div>
+    <div class="metric"><div class="metric-label">Facturación</div><div class="metric-value mono">${fmt(tv)}</div></div>
     <div class="metric"><div class="metric-label">Costo a papá</div><div class="metric-value mono red">${fmt(tc)}</div></div>
-    <div class="metric"><div class="metric-label">Ganancia total</div><div class="metric-value mono green">${fmt(tg)}</div></div>
-    <div class="metric"><div class="metric-label">Margen promedio</div><div class="metric-value mono ${m>=40?'green':m>=20?'amber':'red'}">${pct(m)}</div></div>
-    <div class="metric"><div class="metric-label">Pedidos</div><div class="metric-value mono">${pedidos.length}</div></div>`;
+    <div class="metric"><div class="metric-label">Ganancia bruta</div><div class="metric-value mono green">${fmt(tg)}<span style="font-size:13px;margin-left:6px">${pct(m)}</span></div></div>
+    <div class="metric"><div class="metric-label">Gastos operativos</div><div class="metric-value mono red">${fmt(totalGastos)}</div></div>
+    <div class="metric"><div class="metric-label">Ganancia neta</div><div class="metric-value mono ${gananciaNetaReal>=0?'green':'red'}">${fmt(gananciaNetaReal)}<span style="font-size:13px;margin-left:6px">${pct(mNeto)}</span></div></div>
+    <div class="metric"><div class="metric-label">Pagado a papá</div><div class="metric-value mono">${fmt(totalPagadoPapa)}</div></div>`;
+
   const pc={};
-  pedidos.forEach(p=>{
+  pedFiltrados.forEach(p=>{
     if(!pc[p.clienteId])pc[p.clienteId]={nombre:p.clienteNombre,n:0,venta:0,costo:0,ganancia:0};
     pc[p.clienteId].n++;pc[p.clienteId].venta+=Number(p.totalVenta);pc[p.clienteId].costo+=Number(p.totalCosto);pc[p.clienteId].ganancia+=Number(p.ganancia);
   });
   const sorted=Object.values(pc).sort((a,b)=>b.ganancia-a.ganancia);
-  el.innerHTML=`<div class="card" style="padding:0"><div class="tw"><table>
-    <thead><tr><th>#</th><th>Cliente</th><th style="text-align:center">Pedidos</th><th>Facturación</th><th>Costo papá</th><th>Ganancia</th><th>Margen</th><th>Ganancia/pedido</th></tr></thead>
-    <tbody>${sorted.map((c,i)=>{
-      const m=c.venta>0?(c.ganancia/c.venta*100):0;
-      return `<tr>
-        <td style="font-weight:600;color:var(--text-3)">#${i+1}</td>
-        <td style="font-weight:500">${c.nombre}</td>
-        <td style="text-align:center" class="mono">${c.n}</td>
-        <td class="mono">${fmt(c.venta)}</td>
-        <td class="mono" style="color:var(--red)">${fmt(c.costo)}</td>
-        <td class="mono" style="color:var(--green);font-weight:600">${fmt(c.ganancia)}</td>
-        <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
-        <td class="mono" style="color:var(--text-2)">${fmt(c.n>0?c.ganancia/c.n:0)}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table></div></div>`;
+
+  // Gastos breakdown
+  const gastosPorTipo = {};
+  gastosFiltrados.forEach(g=>{ gastosPorTipo[g.tipo]=(gastosPorTipo[g.tipo]||0)+g.monto; });
+  const tipoLabel={repostero1:'Repostero 1',repostero2:'Repostero 2',luz:'Luz',otro:'Otros'};
+  const gastosRows = Object.entries(gastosPorTipo).map(([t,m])=>`
+    <tr><td>${tipoLabel[t]||t}</td><td class="mono" style="color:var(--red);text-align:right">${fmt(m)}</td></tr>`).join('');
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="card" style="padding:0">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Rentabilidad por cliente</div>
+        <div class="tw"><table>
+          <thead><tr><th>#</th><th>Cliente</th><th style="text-align:center">Pedidos</th><th>Facturación</th><th>Costo papá</th><th>Ganancia</th><th>Margen</th><th>G/pedido</th></tr></thead>
+          <tbody>${sorted.map((c,i)=>{
+            const m=c.venta>0?(c.ganancia/c.venta*100):0;
+            return `<tr>
+              <td style="font-weight:600;color:var(--text-3)">#${i+1}</td>
+              <td style="font-weight:500">${c.nombre}</td>
+              <td style="text-align:center" class="mono">${c.n}</td>
+              <td class="mono">${fmt(c.venta)}</td>
+              <td class="mono" style="color:var(--red)">${fmt(c.costo)}</td>
+              <td class="mono" style="color:var(--green);font-weight:600">${fmt(c.ganancia)}</td>
+              <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
+              <td class="mono" style="color:var(--text-2)">${fmt(c.n>0?c.ganancia/c.n:0)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>
+      <div class="card" style="padding:0">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Desglose de gastos</div>
+        <table style="margin:8px 0">
+          <tbody>
+            ${gastosRows||'<tr><td colspan="2" style="text-align:center;color:var(--text-3);padding:16px">Sin gastos en este período</td></tr>'}
+            <tr style="border-top:2px solid var(--border)">
+              <td style="font-weight:600;padding:10px 12px">Total gastos</td>
+              <td class="mono" style="color:var(--red);font-weight:700;text-align:right;padding:10px 12px">${fmt(totalGastos)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:14px 20px;border-top:1px solid var(--border);background:var(--green-bg);border-radius:0 0 var(--radius) var(--radius)">
+          <div style="font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Ganancia neta del período</div>
+          <div style="font-size:24px;font-weight:700;color:${gananciaNetaReal>=0?'var(--green)':'var(--red)'};font-family:'DM Mono',monospace">${fmt(gananciaNetaReal)}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
 // ── ADMIN ──────────────────────────────────────────────────────────────────
@@ -1019,6 +1181,201 @@ function toast(msg,tipo='as'){
   el.innerHTML=msg;
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),3500);
+}
+
+
+// ── PAGOS Y GASTOS — SINCRONIZADOS CON SHEETS ────────────────────────────
+let pagosPapa = [];
+let gastos = [];
+
+async function cargarPagos(){
+  try{
+    const d = await jsonp(SCRIPT_URL+'?tipo=pagos');
+    if(d.ok) pagosPapa = d.pagos||[];
+  }catch(e){}
+}
+
+async function cargarGastos(){
+  try{
+    const d = await jsonp(SCRIPT_URL+'?tipo=gastos');
+    if(d.ok) gastos = d.gastos||[];
+  }catch(e){}
+}
+
+// ── PAGOS A PAPÁ ──────────────────────────────────────────────────────────
+function renderPagosPapa(){
+  const fecha = document.getElementById('pp-fecha');
+  if(!fecha.value) fecha.value = new Date().toISOString().split('T')[0];
+
+  // Pedidos con costo pendiente de pago a papá
+  const pagados = new Set(pagosPapa.flatMap(p=>p.pedidoIds));
+  const pendientes = pedidos.filter(p=>!pagados.has(p.id));
+
+  const lista = document.getElementById('pp-pedidos-lista');
+  if(!pendientes.length){
+    lista.innerHTML='<div class="empty" style="padding:1rem">Todos los pedidos están pagados a papá.</div>';
+    document.getElementById('pp-footer').style.display='none';
+  } else {
+    lista.innerHTML = pendientes.map(p=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <input type="checkbox" id="pp-chk-${p.id}" value="${p.id}" onchange="actualizarTotalPago()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/>
+        <label for="pp-chk-${p.id}" style="flex:1;cursor:pointer;font-size:13px">
+          <span style="font-weight:500">${p.clienteNombre}</span>
+          <span style="color:var(--text-2);margin:0 6px">·</span>
+          <span style="color:var(--text-2)">${p.fecha}</span>
+          ${p.nota?`<span style="color:var(--text-3);margin-left:6px">— ${p.nota}</span>`:''}
+        </label>
+        <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--red);font-size:13px">${fmt(p.totalCosto)}</span>
+      </div>`).join('');
+    document.getElementById('pp-footer').style.display='block';
+    actualizarTotalPago();
+  }
+
+  // Historial
+  renderHistorialPagosPapa();
+}
+
+function actualizarTotalPago(){
+  const checks = document.querySelectorAll('[id^="pp-chk-"]:checked');
+  const pagados = new Set(pagosPapa.flatMap(p=>p.pedidoIds));
+  let total = 0;
+  let count = 0;
+  checks.forEach(chk=>{
+    const p = pedidos.find(x=>x.id===chk.value);
+    if(p && !pagados.has(p.id)){ total+=Number(p.totalCosto); count++; }
+  });
+  document.getElementById('pp-total').textContent = fmt(total);
+  document.getElementById('pp-count').textContent = count;
+}
+
+function registrarPagoPapa(){
+  const fecha = document.getElementById('pp-fecha').value;
+  const ref = document.getElementById('pp-ref').value.trim();
+  const nota = document.getElementById('pp-nota').value.trim();
+  const checks = document.querySelectorAll('[id^="pp-chk-"]:checked');
+  if(!fecha){ alert('Seleccioná una fecha'); return; }
+  if(!checks.length){ alert('Seleccioná al menos un pedido'); return; }
+  const pagados = new Set(pagosPapa.flatMap(p=>p.pedidoIds));
+  const pedidoIds = [];
+  let total = 0;
+  checks.forEach(chk=>{
+    const p = pedidos.find(x=>x.id===chk.value);
+    if(p && !pagados.has(p.id)){ pedidoIds.push(p.id); total+=Number(p.totalCosto); }
+  });
+  if(!pedidoIds.length){ alert('Esos pedidos ya están pagados'); return; }
+  const pago = { id:'pago-'+Date.now(), fecha, ref, nota, pedidoIds, total };
+  try {
+    await apiPost({action:'guardarPago', pago});
+    pagosPapa.unshift(pago);
+    document.getElementById('pp-ref').value='';
+    document.getElementById('pp-nota').value='';
+    renderPagosPapa();
+    toast('Pago a papá registrado','as');
+  } catch(e) { toast('Error al guardar pago','ae'); }
+}
+
+function renderHistorialPagosPapa(){
+  const el = document.getElementById('pp-historial');
+  if(!pagosPapa.length){ el.innerHTML='<div class="empty">No hay pagos registrados.</div>'; return; }
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>Fecha</th><th>Referencia</th><th>Pedidos</th><th>Total pagado</th><th>Nota</th><th></th></tr></thead>
+    <tbody>${pagosPapa.map(p=>`<tr>
+      <td class="mono" style="font-size:12px;color:var(--text-2)">${p.fecha}</td>
+      <td class="mono" style="font-size:12px">${p.ref||'—'}</td>
+      <td style="text-align:center">${p.pedidoIds.length}</td>
+      <td class="mono" style="font-weight:600;color:var(--red)">${fmt(p.total)}</td>
+      <td style="color:var(--text-2);font-size:12px">${p.nota||'—'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="eliminarPagoPapa('${p.id}')">✕</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function eliminarPagoPapa(id){
+  if(!confirm('¿Eliminás este pago?')) return;
+  try {
+    await apiPost({action:'eliminarPago', id});
+    pagosPapa = pagosPapa.filter(p=>p.id!==id);
+    renderPagosPapa();
+    toast('Pago eliminado','ai');
+  } catch(e) { toast('Error al eliminar','ae'); }
+}
+
+// ── GASTOS ────────────────────────────────────────────────────────────────
+const GASTO_DEFAULTS = {
+  repostero1: {desc:'Repostero 1 — quincena', monto:75000},
+  repostero2: {desc:'Repostero 2 — quincena', monto:62500},
+  luz: {desc:'Pago luz producción', monto:''},
+  otro: {desc:'', monto:''}
+};
+
+function toggleGastoTipo(){
+  const tipo = document.getElementById('gasto-tipo').value;
+  const def = GASTO_DEFAULTS[tipo];
+  document.getElementById('gasto-monto').value = def.monto;
+  document.getElementById('gasto-desc').value = def.desc;
+}
+
+async function agregarGasto(){
+  const tipo = document.getElementById('gasto-tipo').value;
+  const fecha = document.getElementById('gasto-fecha').value;
+  const monto = parseFloat(document.getElementById('gasto-monto').value)||0;
+  const desc = document.getElementById('gasto-desc').value.trim();
+  const ref = document.getElementById('gasto-ref').value.trim();
+  if(!fecha){ toast('Seleccioná una fecha','ae'); return; }
+  if(!monto){ toast('Ingresá un monto','ae'); return; }
+  const gasto = { id:'gasto-'+Date.now(), tipo, fecha, monto, desc, ref };
+  try {
+    await apiPost({action:'guardarGasto', gasto});
+    gastos.unshift(gasto);
+    document.getElementById('gasto-monto').value='';
+    document.getElementById('gasto-desc').value='';
+    document.getElementById('gasto-ref').value='';
+    renderGastos();
+    toast('Gasto registrado','as');
+  } catch(e) { toast('Error al guardar gasto','ae'); }
+}
+
+async function eliminarGasto(id){
+  if(!confirm('¿Eliminás este gasto?')) return;
+  try {
+    await apiPost({action:'eliminarGasto', id});
+    gastos = gastos.filter(g=>g.id!==id);
+    renderGastos();
+    toast('Gasto eliminado','ai');
+  } catch(e) { toast('Error al eliminar','ae'); }
+}
+
+function renderGastos(){
+  const fecha = document.getElementById('gasto-fecha');
+  if(!fecha.value) fecha.value = new Date().toISOString().split('T')[0];
+
+  const totalGastos = gastos.reduce((s,g)=>s+g.monto,0);
+  const totalReposteros = gastos.filter(g=>g.tipo.startsWith('repostero')).reduce((s,g)=>s+g.monto,0);
+  const totalLuz = gastos.filter(g=>g.tipo==='luz').reduce((s,g)=>s+g.monto,0);
+  const totalOtros = gastos.filter(g=>g.tipo==='otro').reduce((s,g)=>s+g.monto,0);
+
+  document.getElementById('gastos-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Total gastos</div><div class="metric-value red mono">${fmt(totalGastos)}</div></div>
+    <div class="metric"><div class="metric-label">Reposteros</div><div class="metric-value mono">${fmt(totalReposteros)}</div></div>
+    <div class="metric"><div class="metric-label">Luz</div><div class="metric-value mono">${fmt(totalLuz)}</div></div>
+    <div class="metric"><div class="metric-label">Otros</div><div class="metric-value mono">${fmt(totalOtros)}</div></div>`;
+
+  const tipoLabel = {repostero1:'Repostero 1',repostero2:'Repostero 2',luz:'Luz',otro:'Otro'};
+  const tipoBadge = {repostero1:'ba',repostero2:'bb',luz:'br',otro:'bg'};
+
+  const el = document.getElementById('gastos-historial');
+  if(!gastos.length){ el.innerHTML='<div class="empty">No hay gastos registrados.</div>'; return; }
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Referencia</th><th>Monto</th><th></th></tr></thead>
+    <tbody>${gastos.map(g=>`<tr>
+      <td class="mono" style="font-size:12px;color:var(--text-2)">${g.fecha}</td>
+      <td><span class="badge ${tipoBadge[g.tipo]||'bg'}">${tipoLabel[g.tipo]||g.tipo}</span></td>
+      <td style="font-size:13px">${g.desc||'—'}</td>
+      <td class="mono" style="font-size:12px;color:var(--text-2)">${g.ref||'—'}</td>
+      <td class="mono" style="font-weight:600;color:var(--red)">${fmt(g.monto)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="eliminarGasto('${g.id}')">✕</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
 }
 
 initApp();
