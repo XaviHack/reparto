@@ -213,13 +213,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
 <!-- RENTABILIDAD -->
 <div id="page-rentabilidad" class="page">
   <div class="page-title">Rentabilidad neta</div>
-  <div class="page-sub">Ganancia real después de gastos operativos</div>
-  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-    <button class="btn btn-sm btn-primary" onclick="document.getElementById('periodo-selector').value='semana';renderRentabilidad()">Última semana</button>
-    <button class="btn btn-sm" onclick="document.getElementById('periodo-selector').value='quincena';renderRentabilidad()">Quincena</button>
-    <button class="btn btn-sm" onclick="document.getElementById('periodo-selector').value='mes';renderRentabilidad()">Mes</button>
-    <button class="btn btn-sm" onclick="document.getElementById('periodo-selector').value='todo';renderRentabilidad()">Todo</button>
-    <select id="periodo-selector" style="display:none"></select>
+  <div class="page-sub">Ganancia real — solo pedidos con cliente cobrado y papá pagado</div>
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="periodo-btns">
+    <button class="btn btn-sm btn-primary" id="btn-semana" onclick="setPeriodo('semana')">Esta semana</button>
+    <button class="btn btn-sm" id="btn-quincena" onclick="setPeriodo('quincena')">Quincena</button>
+    <button class="btn btn-sm" id="btn-mes" onclick="setPeriodo('mes')">Este mes</button>
+    <button class="btn btn-sm" id="btn-todo" onclick="setPeriodo('todo')">Todo</button>
   </div>
   <div class="metrics" id="metricas-top"></div>
   <div id="tabla-rentabilidad"><div class="empty">Registrá pedidos para ver el análisis.</div></div>
@@ -871,96 +870,143 @@ function renderCobros(){
 }
 
 // ── RENTABILIDAD ───────────────────────────────────────────────────────────
+let periodoActual = 'semana';
+
+function setPeriodo(p){
+  periodoActual = p;
+  ['semana','quincena','mes','todo'].forEach(x=>{
+    const btn = document.getElementById('btn-'+x);
+    if(btn){
+      btn.className = x===p ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+    }
+  });
+  renderRentabilidad();
+}
+
 function renderRentabilidad(){
   const el=document.getElementById('tabla-rentabilidad');
   const mg=document.getElementById('metricas-top');
   if(!pedidos.length){el.innerHTML='<div class="empty">Registrá pedidos para ver el análisis.</div>';mg.innerHTML='';return}
 
-  // Period filter
-  const periodo = document.getElementById('periodo-selector')?.value || 'todo';
   const hoy = new Date();
+  hoy.setHours(23,59,59,999);
   let desde = null;
-  if(periodo==='semana'){ desde=new Date(hoy); desde.setDate(hoy.getDate()-7); }
-  else if(periodo==='quincena'){ desde=new Date(hoy); desde.setDate(hoy.getDate()-15); }
-  else if(periodo==='mes'){ desde=new Date(hoy); desde.setMonth(hoy.getMonth()-1); }
+  if(periodoActual==='semana'){
+    desde=new Date(hoy);
+    desde.setDate(hoy.getDate()-7);
+    desde.setHours(0,0,0,0);
+  } else if(periodoActual==='quincena'){
+    desde=new Date(hoy);
+    desde.setDate(hoy.getDate()-15);
+    desde.setHours(0,0,0,0);
+  } else if(periodoActual==='mes'){
+    desde=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  }
 
-  const filtrarFecha = p => !desde || new Date(p.fecha) >= desde;
-  const filtrarFechaGasto = g => !desde || new Date(g.fecha) >= desde;
-  const filtrarFechaPago = p => !desde || new Date(p.fecha) >= desde;
+  const enPeriodo = p => !desde || new Date(p.fecha) >= desde;
 
-  const pedFiltrados = pedidos.filter(filtrarFecha);
-  const gastosFiltrados = gastos.filter(filtrarFechaGasto);
-  const pagosFiltrados = pagosPapa.filter(filtrarFechaPago);
+  // Solo pedidos con AMBOS badges en verde (cobrado + pagado a papá)
+  const pedLiquidos = pedidos.filter(p =>
+    enPeriodo(p) &&
+    p.estado === 'cobrado' &&
+    (p.estadoPapa === 'pagado')
+  );
 
-  const tv=pedFiltrados.reduce((s,p)=>s+Number(p.totalVenta),0);
-  const tg=pedFiltrados.reduce((s,p)=>s+Number(p.ganancia),0);
-  const tc=pedFiltrados.reduce((s,p)=>s+Number(p.totalCosto),0);
-  const totalGastos=gastosFiltrados.reduce((s,g)=>s+g.monto,0);
-  const totalPagadoPapa=pagosFiltrados.reduce((s,p)=>s+p.total,0);
-  const gananciaNetaReal=tg-totalGastos;
-  const m=tv>0?(tg/tv*100):0;
-  const mNeto=tv>0?(gananciaNetaReal/tv*100):0;
+  // Todos los pedidos del período (para análisis general)
+  const pedPeriodo = pedidos.filter(enPeriodo);
+
+  // Calcular reserva reposteros según período
+  const REPOSTEROS_MENSUAL = 275000;
+  let reservaReposteros = 0;
+  if(periodoActual==='semana') reservaReposteros = Math.round(REPOSTEROS_MENSUAL / 4);
+  else if(periodoActual==='quincena') reservaReposteros = Math.round(REPOSTEROS_MENSUAL / 2);
+  else if(periodoActual==='mes') reservaReposteros = REPOSTEROS_MENSUAL;
+  else reservaReposteros = 0; // "Todo" no aplica reserva fija
+
+  // Métricas líquidas (ambos cobrado)
+  const tvLiquido = pedLiquidos.reduce((s,p)=>s+Number(p.totalVenta),0);
+  const tcLiquido = pedLiquidos.reduce((s,p)=>s+Number(p.totalCosto),0);
+  const ganBruta = pedLiquidos.reduce((s,p)=>s+Number(p.ganancia),0);
+  const ganNeta = ganBruta - reservaReposteros;
+
+  // Métricas generales del período
+  const tvTotal = pedPeriodo.reduce((s,p)=>s+Number(p.totalVenta),0);
+  const pendienteCobro = pedPeriodo.filter(p=>p.estado!=='cobrado').reduce((s,p)=>s+Number(p.totalVenta),0);
+  const pendientePapa = pedPeriodo.filter(p=>p.estadoPapa!=='pagado').reduce((s,p)=>s+Number(p.totalCosto),0);
+
+  const mLiquido = tvLiquido>0?(ganBruta/tvLiquido*100):0;
+  const mNeto = tvLiquido>0?(ganNeta/tvLiquido*100):0;
+
+  const labelPeriodo = {semana:'esta semana',quincena:'esta quincena',mes:'este mes',todo:'total acumulado'}[periodoActual];
 
   mg.innerHTML=`
-    <div class="metric"><div class="metric-label">Facturación</div><div class="metric-value mono">${fmt(tv)}</div></div>
-    <div class="metric"><div class="metric-label">Costo a papá</div><div class="metric-value mono red">${fmt(tc)}</div></div>
-    <div class="metric"><div class="metric-label">Ganancia bruta</div><div class="metric-value mono green">${fmt(tg)}<span style="font-size:13px;margin-left:6px">${pct(m)}</span></div></div>
-    <div class="metric"><div class="metric-label">Gastos operativos</div><div class="metric-value mono red">${fmt(totalGastos)}</div></div>
-    <div class="metric"><div class="metric-label">Ganancia neta</div><div class="metric-value mono ${gananciaNetaReal>=0?'green':'red'}">${fmt(gananciaNetaReal)}<span style="font-size:13px;margin-left:6px">${pct(mNeto)}</span></div></div>
-    <div class="metric"><div class="metric-label">Pagado a papá</div><div class="metric-value mono">${fmt(totalPagadoPapa)}</div></div>`;
+    <div class="metric" style="border:2px solid var(--green)">
+      <div class="metric-label">💰 En tu bolsillo</div>
+      <div class="metric-value mono ${ganNeta>=0?'green':'red'}">${fmt(ganNeta)}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px">${labelPeriodo}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Ganancia bruta líquida</div>
+      <div class="metric-value mono green">${fmt(ganBruta)}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px">${pct(mLiquido)} margen</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Reserva reposteros</div>
+      <div class="metric-value mono red">−${fmt(reservaReposteros)}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px">₡68,750/semana</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Por cobrar clientes</div>
+      <div class="metric-value mono amber">${fmt(pendienteCobro)}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px">no líquido aún</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Por pagar a papá</div>
+      <div class="metric-value mono red">${fmt(pendientePapa)}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px">pendiente liquidar</div>
+    </div>`;
 
+  // Tabla por cliente — pedidos líquidos
   const pc={};
-  pedFiltrados.forEach(p=>{
-    if(!pc[p.clienteId])pc[p.clienteId]={nombre:p.clienteNombre,n:0,venta:0,costo:0,ganancia:0};
-    pc[p.clienteId].n++;pc[p.clienteId].venta+=Number(p.totalVenta);pc[p.clienteId].costo+=Number(p.totalCosto);pc[p.clienteId].ganancia+=Number(p.ganancia);
+  pedLiquidos.forEach(p=>{
+    const cid = p.clienteId||p.clienteNombre;
+    if(!pc[cid])pc[cid]={nombre:p.clienteNombre,n:0,venta:0,costo:0,ganancia:0};
+    pc[cid].n++;pc[cid].venta+=Number(p.totalVenta);pc[cid].costo+=Number(p.totalCosto);pc[cid].ganancia+=Number(p.ganancia);
   });
   const sorted=Object.values(pc).sort((a,b)=>b.ganancia-a.ganancia);
 
-  // Gastos breakdown
-  const gastosPorTipo = {};
-  gastosFiltrados.forEach(g=>{ gastosPorTipo[g.tipo]=(gastosPorTipo[g.tipo]||0)+g.monto; });
-  const tipoLabel={repostero1:'Repostero 1',repostero2:'Repostero 2',luz:'Luz',otro:'Otros'};
-  const gastosRows = Object.entries(gastosPorTipo).map(([t,m])=>`
-    <tr><td>${tipoLabel[t]||t}</td><td class="mono" style="color:var(--red);text-align:right">${fmt(m)}</td></tr>`).join('');
+  const clienteRows = sorted.length ? sorted.map((c,i)=>{
+    const m=c.venta>0?(c.ganancia/c.venta*100):0;
+    return `<tr>
+      <td style="font-weight:600;color:var(--text-3)">#${i+1}</td>
+      <td style="font-weight:500">${c.nombre}</td>
+      <td style="text-align:center" class="mono">${c.n}</td>
+      <td class="mono">${fmt(c.venta)}</td>
+      <td class="mono" style="color:var(--red)">${fmt(c.costo)}</td>
+      <td class="mono" style="color:var(--green);font-weight:600">${fmt(c.ganancia)}</td>
+      <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">Sin pedidos completamente liquidados en este período</td></tr>';
 
   el.innerHTML=`
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="card" style="padding:0">
-        <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Rentabilidad por cliente</div>
-        <div class="tw"><table>
-          <thead><tr><th>#</th><th>Cliente</th><th style="text-align:center">Pedidos</th><th>Facturación</th><th>Costo papá</th><th>Ganancia</th><th>Margen</th><th>G/pedido</th></tr></thead>
-          <tbody>${sorted.map((c,i)=>{
-            const m=c.venta>0?(c.ganancia/c.venta*100):0;
-            return `<tr>
-              <td style="font-weight:600;color:var(--text-3)">#${i+1}</td>
-              <td style="font-weight:500">${c.nombre}</td>
-              <td style="text-align:center" class="mono">${c.n}</td>
-              <td class="mono">${fmt(c.venta)}</td>
-              <td class="mono" style="color:var(--red)">${fmt(c.costo)}</td>
-              <td class="mono" style="color:var(--green);font-weight:600">${fmt(c.ganancia)}</td>
-              <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
-              <td class="mono" style="color:var(--text-2)">${fmt(c.n>0?c.ganancia/c.n:0)}</td>
-            </tr>`;
-          }).join('')}</tbody>
-        </table></div>
+    <div class="card" style="padding:0;margin-bottom:16px">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Pedidos liquidados — ${labelPeriodo}</span>
+        <span style="font-size:11px;color:var(--text-3)">(cliente cobrado + papá pagado)</span>
       </div>
-      <div class="card" style="padding:0">
-        <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Desglose de gastos</div>
-        <table style="margin:8px 0">
-          <tbody>
-            ${gastosRows||'<tr><td colspan="2" style="text-align:center;color:var(--text-3);padding:16px">Sin gastos en este período</td></tr>'}
-            <tr style="border-top:2px solid var(--border)">
-              <td style="font-weight:600;padding:10px 12px">Total gastos</td>
-              <td class="mono" style="color:var(--red);font-weight:700;text-align:right;padding:10px 12px">${fmt(totalGastos)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style="padding:14px 20px;border-top:1px solid var(--border);background:var(--green-bg);border-radius:0 0 var(--radius) var(--radius)">
-          <div style="font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Ganancia neta del período</div>
-          <div style="font-size:24px;font-weight:700;color:${gananciaNetaReal>=0?'var(--green)':'var(--red)'};font-family:'DM Mono',monospace">${fmt(gananciaNetaReal)}</div>
-        </div>
+      <div class="tw"><table>
+        <thead><tr><th>#</th><th>Cliente</th><th style="text-align:center">Pedidos</th><th>Facturación</th><th>Costo papá</th><th>Ganancia</th><th>Margen</th></tr></thead>
+        <tbody>${clienteRows}</tbody>
+      </table></div>
+    </div>
+    ${periodoActual==='semana' ? `<div class="card" style="background:var(--accent-light);border-color:var(--accent)">
+      <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px">📊 Resumen semanal</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px">
+        <span>Ganancia bruta líquida: <strong style="color:var(--green)">${fmt(ganBruta)}</strong></span>
+        <span>Reserva reposteros: <strong style="color:var(--red)">−${fmt(reservaReposteros)}</strong></span>
+        <span style="font-size:14px;font-weight:700;color:var(--accent)">En tu bolsillo: ${fmt(ganNeta)}</span>
       </div>
-    </div>`;
+    </div>` : ''}`;
 }
 
 // ── ADMIN ──────────────────────────────────────────────────────────────────
