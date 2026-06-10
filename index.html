@@ -392,7 +392,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfmLwMI9qVNDQ2ZLWODKrqHTdNV3-6wCoAxSSuHUmE7XK79ZLESTSuyV09GlADFQrYMw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFDBDNtd3lsZH2Q03N_I-2sjVqnJN1UCNQvqgHv2AJ2CqJXDPDOAW8kRj7WTWAWXMJGg/exec';
 const ADMIN_KEY = 'Xarcia1970';
 const fmt = n => '₡' + Math.round(n).toLocaleString('es-CR');
 const pct = n => (Math.round(n*10)/10).toFixed(1)+'%';
@@ -1087,11 +1087,14 @@ function guardarProductoAdmin(){
   }else{
     PRODUCTOS.push({id:'p'+Date.now(),nombre,unidad,costo});
   }
-  sincronizarCatalogo();
+  try{
+    const prod = PRODUCTOS.find(x=>x.id===(id||''));
+    await apiPost({action:'guardarProducto',producto:{id:id||'p'+Date.now(),nombre,unidad,costo}});
+    toast('✓ Producto guardado','as');
+  }catch(e){toast('Error al guardar producto','ae');}
   limpiarFormProducto();
   renderAdminProductos();
   reinitSelects();
-  toast('Producto guardado','as');
 }
 
 function editarProducto(id){
@@ -1154,11 +1157,13 @@ function guardarClienteAdmin(){
   }else{
     CLIENTES.push({id:'c'+Date.now(),nombre,zona,pago,diasCredito:dias});
   }
-  sincronizarCatalogo();
+  try{
+    await apiPost({action:'guardarCliente',cliente:{id:id||'c'+Date.now(),nombre,zona,pago,diasCredito:dias}});
+    toast('✓ Cliente guardado','as');
+  }catch(e){toast('Error al guardar cliente','ae');}
   limpiarFormCliente();
   renderAdminClientes();
   reinitSelects();
-  toast('Cliente guardado','as');
 }
 
 function editarCliente(id){
@@ -1194,17 +1199,19 @@ function limpiarFormCliente(){
 }
 
 // ADMIN PRECIOS
-function guardarPrecioAdmin(){
+async function guardarPrecioAdmin(){
   const cid=document.getElementById('apr-cliente').value;
   const pid=document.getElementById('apr-producto').value;
   const precio=parseFloat(document.getElementById('apr-precio').value)||0;
   if(!cid||!pid||!precio){toast('Completá todos los campos','ae');return}
   const ex=PRECIOS.find(p=>p.clienteId===cid&&p.productoId===pid);
   if(ex){ex.precio=precio}else{PRECIOS.push({clienteId:cid,productoId:pid,precio})}
-  sincronizarCatalogo();
+  try{
+    await apiPost({action:'guardarPrecio',precio:{clienteId:cid,productoId:pid,precio}});
+    toast('✓ Precio guardado','as');
+  }catch(e){toast('Error al guardar precio','ae');}
   renderPreciosCliente();
   document.getElementById('apr-precio').value='';
-  toast('Precio guardado','as');
 }
 
 function renderPreciosCliente(){
@@ -1245,7 +1252,7 @@ function editarPrecio(cid,pid){
 function eliminarPrecio(cid,pid){
   if(!confirm('¿Eliminás este precio?'))return;
   PRECIOS=PRECIOS.filter(p=>!(p.clienteId===cid&&p.productoId===pid));
-  sincronizarCatalogo();
+  try{ await apiPost({action:'eliminarPrecio',clienteId:cid,productoId:pid}); }catch(e){}
   renderPreciosCliente();
   toast('Precio eliminado','ai');
 }
