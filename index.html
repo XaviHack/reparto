@@ -1075,7 +1075,7 @@ function renderAdminProductos(){
   </table>`;
 }
 
-function guardarProductoAdmin(){
+async function guardarProductoAdmin(){
   const nombre=document.getElementById('ap-nombre').value.trim();
   const unidad=document.getElementById('ap-unidad').value.trim();
   const costo=parseFloat(document.getElementById('ap-costo').value)||0;
@@ -1108,7 +1108,7 @@ function editarProducto(id){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function eliminarProductoAdmin(id){
+async function eliminarProductoAdmin(id){
   if(!confirm('¿Eliminás este producto? También se eliminarán sus precios asociados.'))return;
   PRODUCTOS=PRODUCTOS.filter(p=>p.id!==id);
   PRECIOS=PRECIOS.filter(p=>p.productoId!==id);
@@ -1144,7 +1144,7 @@ function renderAdminClientes(){
   </table>`;
 }
 
-function guardarClienteAdmin(){
+async function guardarClienteAdmin(){
   const nombre=document.getElementById('ac-nombre').value.trim();
   const zona=document.getElementById('ac-zona').value.trim();
   const pago=document.getElementById('ac-pago').value;
@@ -1178,7 +1178,7 @@ function editarCliente(id){
   document.getElementById('btn-cancelar-cli').style.display='inline-flex';
 }
 
-function eliminarClienteAdmin(id){
+async function eliminarClienteAdmin(id){
   if(!confirm('¿Eliminás este cliente? También se eliminarán sus precios.'))return;
   CLIENTES=CLIENTES.filter(c=>c.id!==id);
   PRECIOS=PRECIOS.filter(p=>p.clienteId!==id);
@@ -1249,7 +1249,7 @@ function editarPrecio(cid,pid){
   document.getElementById('apr-precio').value=pr.precio;
 }
 
-function eliminarPrecio(cid,pid){
+async function eliminarPrecio(cid,pid){
   if(!confirm('¿Eliminás este precio?'))return;
   PRECIOS=PRECIOS.filter(p=>!(p.clienteId===cid&&p.productoId===pid));
   try{ await apiPost({action:'eliminarPrecio',clienteId:cid,productoId:pid}); }catch(e){}
