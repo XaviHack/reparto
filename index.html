@@ -461,9 +461,11 @@ let CLIENTES = [
   {id:'c1779940758049', nombre:'Michael', zona:'Guadalupe', pago:'contado', diasCredito:0},
   {id:'c1779940770678', nombre:'Vanesa', zona:'San Jose centro', pago:'contado', diasCredito:0},
   {id:'c1779940796704', nombre:'Carlos Mercadito Verde', zona:'Sabanilla', pago:'contado', diasCredito:0},
-  {id:'c1779940796705', nombre:'Paqueteria y Reparto', zona:'-', pago:'credito', diasCredito:22}
+  {id:'c1779940796705', nombre:'Paqueteria y Reparto', zona:'-', pago:'credito', diasCredito:22},
+  {id:'c1779940796706', nombre:'Sociedad 898', zona:'-', pago:'contado', diasCredito:0}
 ];
 let PRECIOS = [
+  // Eduardo Sodas UNA
   {clienteId:'c1779940747286', productoId:'p2', precio:575},
   {clienteId:'c1779940747286', productoId:'p4', precio:575},
   {clienteId:'c1779940747286', productoId:'p6', precio:575},
@@ -473,7 +475,11 @@ let PRECIOS = [
   {clienteId:'c1779940747286', productoId:'p18', precio:575},
   {clienteId:'c1779940747286', productoId:'p33', precio:575},
   {clienteId:'c1779940747286', productoId:'p20', precio:575},
+  // Michael
   {clienteId:'c1779940758049', productoId:'p41', precio:200},
+  {clienteId:'c1779940758049', productoId:'p47', precio:750},
+  {clienteId:'c1779940758049', productoId:'p51', precio:750},
+  // Carlos Mercadito Verde
   {clienteId:'c1779940796704', productoId:'p52', precio:475},
   {clienteId:'c1779940796704', productoId:'p53', precio:475},
   {clienteId:'c1779940796704', productoId:'p8', precio:450},
@@ -484,7 +490,9 @@ let PRECIOS = [
   {clienteId:'c1779940796704', productoId:'p55', precio:450},
   {clienteId:'c1779940796704', productoId:'p18', precio:450},
   {clienteId:'c1779940796704', productoId:'p10', precio:450},
-  {clienteId:'c1779940796704', productoId:'p56', precio:475}
+  {clienteId:'c1779940796704', productoId:'p56', precio:475},
+  // Sociedad 898
+  {clienteId:'c1779940796706', productoId:'p47', precio:575}
 ];
 
 let pedidos = [];
@@ -547,19 +555,22 @@ async function cargarPedidos(mostrarToast=false){
 async function cargarCatalogo(){
   try{
     const d=await jsonp(SCRIPT_URL+'?tipo=catalogo');
-    if(d.ok&&d.catalogo&&d.catalogo.productos&&d.catalogo.productos.length>0){
+    if(d.ok && d.catalogo && d.catalogo.productos && d.catalogo.productos.length>0){
+      // Sheets tiene datos — SIEMPRE usar Sheets, nunca sobreescribir
       PRODUCTOS=d.catalogo.productos;
       CLIENTES=d.catalogo.clientes;
       PRECIOS=d.catalogo.precios;
       catalogoCargado=true;
       reinitSelects();
     } else {
-      // Catalogo vacio en Sheets, sincronizar datos locales
+      // Sheets está vacío — sincronizar datos del HTML una sola vez
       await sincronizarCatalogo();
       catalogoCargado=true;
       reinitSelects();
     }
   }catch(e){
+    // Error de red — usar datos locales sin tocar Sheets
+    catalogoCargado=true;
     reinitSelects();
   }
 }
