@@ -1651,13 +1651,13 @@ function fmtFecha(f){
 function csvRow(arr){
   return arr.map(v=>{
     const s = String(v===null||v===undefined?'':v);
-    return s.includes(',') || s.includes('"') || s.includes('
-') ? '"'+s.replace(/"/g,'""')+'"' : s;
+    const necesitaQuotes = s.includes(',') || s.includes('"') || s.includes('\n');
+    return necesitaQuotes ? '"'+s.replace(/"/g,'""')+'"' : s;
   }).join(',');
 }
 
 function descargarCSV(nombre, filas){
-  const bom = '﻿';
+  const bom = '\uFEFF';
   const contenido = bom + filas.map(f=>csvRow(f)).join('
 ');
   const blob = new Blob([contenido], {type:'text/csv;charset=utf-8;'});
