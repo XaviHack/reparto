@@ -1658,8 +1658,7 @@ function csvRow(arr){
 
 function descargarCSV(nombre, filas){
   const bom = '\uFEFF';
-  const contenido = bom + filas.map(f=>csvRow(f)).join('
-');
+  const contenido = bom + filas.map(f=>csvRow(f)).join('\n');
   const blob = new Blob([contenido], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
