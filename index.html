@@ -241,6 +241,26 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
   <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">⚠️ Pendientes del período</div>
   <div class="metrics" id="metricas-pendientes" style="margin-bottom:20px"></div>
 
+  <!-- Botones de exportación -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
+    <button class="btn btn-primary" onclick="exportarEstadoResultados()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar estado de resultados
+    </button>
+    <div style="display:flex;align-items:flex-end;gap:8px">
+      <div>
+        <label style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Cliente para estado de cuenta</label>
+        <select id="export-cliente" style="font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);min-width:200px">
+          <option value="">— Seleccioná cliente —</option>
+        </select>
+      </div>
+      <button class="btn" onclick="exportarEstadoCuenta()" style="white-space:nowrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exportar estado de cuenta
+      </button>
+    </div>
+  </div>
+
   <!-- Tablas -->
   <div id="tabla-rentabilidad"><div class="empty">Registrá pedidos para ver el análisis.</div></div>
 </div>
@@ -607,10 +627,11 @@ function reinitSelects(){
   const fc=document.getElementById('filtro-cliente');
   const aprCli=document.getElementById('apr-cliente');
   const filtroPreciosCli=document.getElementById('filtro-precios-cliente');
-  [sel,fc,aprCli,filtroPreciosCli].forEach(s=>{
+  const expCli=document.getElementById('export-cliente');
+  [sel,fc,aprCli,filtroPreciosCli,expCli].forEach(s=>{
     const val=s.value;
     s.innerHTML=s===sel?'<option value="">— Seleccioná un cliente —</option>':'<option value="">Todos los clientes</option>';
-    if(s===aprCli||s===filtroPreciosCli) s.innerHTML='<option value="">— Seleccioná —</option>';
+    if(s===aprCli||s===filtroPreciosCli||s===expCli) s.innerHTML='<option value="">— Seleccioná —</option>';
     CLIENTES.forEach(c=>s.innerHTML+=`<option value="${c.id}">${c.nombre}</option>`);
     s.value=val;
   });
@@ -1586,6 +1607,212 @@ function renderGastos(){
       <td><button class="btn btn-sm btn-danger" onclick="eliminarGasto('${g.id}')">✕</button></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
+}
+
+
+// ── EXPORTAR EXCEL ────────────────────────────────────────────────────────────
+
+function getRangoDates(){
+  const hoy = new Date();
+  hoy.setHours(23,59,59,999);
+  let desde = null, hasta = hoy;
+  if(periodoActual==='semana'){
+    desde = new Date(hoy);
+    const dia = hoy.getDay();
+    const diasDesdelunes = dia===0?6:dia-1;
+    desde.setDate(hoy.getDate()-diasDesdelunes);
+    desde.setHours(0,0,0,0);
+  } else if(periodoActual==='quincena'){
+    desde = new Date(hoy); desde.setDate(hoy.getDate()-15); desde.setHours(0,0,0,0);
+  } else if(periodoActual==='mes'){
+    desde = new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  } else if(periodoActual==='rango'){
+    const dv = document.getElementById('rango-desde').value;
+    const hv = document.getElementById('rango-hasta').value;
+    if(dv){ desde = new Date(dv); desde.setHours(0,0,0,0); }
+    if(hv){ hasta = new Date(hv); hasta.setHours(23,59,59,999); }
+  }
+  return {desde, hasta};
+}
+
+function pedidosEnRango(){
+  const {desde, hasta} = getRangoDates();
+  return pedidos.filter(p=>{
+    const f = new Date(p.fecha);
+    return (!desde || f>=desde) && f<=hasta;
+  });
+}
+
+function fmtFecha(f){
+  const d = new Date(f);
+  return isNaN(d) ? f : d.toLocaleDateString('es-CR');
+}
+
+function csvRow(arr){
+  return arr.map(v=>{
+    const s = String(v===null||v===undefined?'':v);
+    return s.includes(',') || s.includes('"') || s.includes('
+') ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',');
+}
+
+function descargarCSV(nombre, filas){
+  const bom = '﻿';
+  const contenido = bom + filas.map(f=>csvRow(f)).join('
+');
+  const blob = new Blob([contenido], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportarEstadoResultados(){
+  const ped = pedidosEnRango();
+  const {desde, hasta} = getRangoDates();
+  const labelDesde = desde ? desde.toLocaleDateString('es-CR') : 'inicio';
+  const labelHasta = hasta.toLocaleDateString('es-CR');
+  const gastosPer = gastos.filter(g=>{
+    const f=new Date(g.fecha);
+    return (!desde||f>=desde)&&f<=hasta;
+  });
+
+  const REPOS_MENSUAL = 275000;
+  let reserva = 0;
+  if(periodoActual==='semana') reserva = Math.round(REPOS_MENSUAL/4);
+  else if(periodoActual==='quincena') reserva = Math.round(REPOS_MENSUAL/2);
+  else if(periodoActual==='mes') reserva = REPOS_MENSUAL;
+  else if(periodoActual==='rango'&&desde){
+    const dias = Math.round((hasta-desde)/86400000);
+    reserva = Math.round(REPOS_MENSUAL/30*dias);
+  }
+
+  const tvTotal = ped.reduce((s,p)=>s+Number(p.totalVenta),0);
+  const tcTotal = ped.reduce((s,p)=>s+Number(p.totalCosto),0);
+  const ganBruta = tvTotal - tcTotal;
+  const totalGastos = gastosPer.reduce((s,g)=>s+g.monto,0);
+  const ganNeta = ganBruta - reserva - totalGastos;
+  const porCobrar = ped.filter(p=>p.estado!=='cobrado').reduce((s,p)=>s+Number(p.totalVenta),0);
+  const porPagarPapa = ped.filter(p=>p.estadoPapa!=='pagado').reduce((s,p)=>s+Number(p.totalCosto),0);
+
+  // Ventas por cliente
+  const porCliente = {};
+  ped.forEach(p=>{
+    const k=p.clienteNombre;
+    if(!porCliente[k]) porCliente[k]={venta:0,costo:0,ganancia:0,pedidos:0};
+    porCliente[k].venta+=Number(p.totalVenta);
+    porCliente[k].costo+=Number(p.totalCosto);
+    porCliente[k].ganancia+=Number(p.ganancia);
+    porCliente[k].pedidos++;
+  });
+
+  const filas = [];
+  filas.push(['ESTADO DE RESULTADOS','','','']);
+  filas.push(['Período:',labelDesde+' al '+labelHasta,'','']);
+  filas.push(['','','','']);
+  filas.push(['═══ INGRESOS ═══','','','']);
+  filas.push(['Cliente','Pedidos','Facturación','Costo papá','Ganancia']);
+  Object.entries(porCliente).sort((a,b)=>b[1].venta-a[1].venta).forEach(([nombre,d])=>{
+    filas.push([nombre, d.pedidos, d.venta, d.costo, d.ganancia]);
+  });
+  filas.push(['TOTAL FACTURACIÓN','',tvTotal,'','']);
+  filas.push(['','','','','']);
+  filas.push(['═══ EGRESOS ═══','','','','']);
+  filas.push(['Concepto','','Monto','','']);
+  filas.push(['Costo de producción (papá)','',tcTotal,'','']);
+  filas.push(['Reserva reposteros','',reserva,'','']);
+  gastosPer.forEach(g=>{
+    const tipos={repostero1:'Repostero 1',repostero2:'Repostero 2',luz:'Luz',otro:'Otro'};
+    filas.push([tipos[g.tipo]||g.tipo+' — '+g.desc,'',g.monto,'','']);
+  });
+  filas.push(['TOTAL EGRESOS','',tcTotal+reserva+totalGastos,'','']);
+  filas.push(['','','','','']);
+  filas.push(['═══ RESULTADO ═══','','','','']);
+  filas.push(['Ganancia bruta','',ganBruta,'','']);
+  filas.push(['Gastos operativos','',-(reserva+totalGastos),'','']);
+  filas.push(['GANANCIA NETA','',ganNeta,'','']);
+  filas.push(['','','','','']);
+  filas.push(['═══ PENDIENTES ═══','','','','']);
+  filas.push(['Por cobrar a clientes','',porCobrar,'','']);
+  filas.push(['Por pagar a papá','',porPagarPapa,'','']);
+  filas.push(['Balance neto pendiente','',porCobrar-porPagarPapa,'','']);
+  filas.push(['','','','','']);
+  filas.push(['═══ DETALLE DE PEDIDOS ═══','','','','','','']);
+  filas.push(['Fecha','Cliente','Facturación','Costo papá','Ganancia','Estado cliente','Estado papá','Nota']);
+  ped.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).forEach(p=>{
+    filas.push([
+      fmtFecha(p.fecha), p.clienteNombre,
+      Number(p.totalVenta), Number(p.totalCosto), Number(p.ganancia),
+      p.estado==='cobrado'?'Cobrado':'Pendiente',
+      p.estadoPapa==='pagado'?'Pagado':'Sin pagar',
+      p.nota||''
+    ]);
+  });
+
+  descargarCSV('Estado_Resultados_'+labelDesde.replace(/\//g,'-')+'_al_'+labelHasta.replace(/\//g,'-')+'.csv', filas);
+  toast('✓ Estado de resultados exportado','as');
+}
+
+function exportarEstadoCuenta(){
+  const cid = document.getElementById('export-cliente').value;
+  if(!cid){ toast('Seleccioná un cliente primero','ae'); return; }
+  const cliente = CLIENTES.find(c=>c.id===cid);
+  const nombreCliente = cliente ? cliente.nombre : cid;
+  const ped = pedidosEnRango().filter(p=>p.clienteId===cid||p.clienteNombre===nombreCliente);
+
+  if(!ped.length){ toast('No hay pedidos de este cliente en el período','ae'); return; }
+
+  const {desde, hasta} = getRangoDates();
+  const labelDesde = desde ? desde.toLocaleDateString('es-CR') : 'inicio';
+  const labelHasta = hasta.toLocaleDateString('es-CR');
+
+  const tvTotal = ped.reduce((s,p)=>s+Number(p.totalVenta),0);
+  const pendiente = ped.filter(p=>p.estado!=='cobrado').reduce((s,p)=>s+Number(p.totalVenta),0);
+  const cobrado = ped.filter(p=>p.estado==='cobrado').reduce((s,p)=>s+Number(p.totalVenta),0);
+
+  const filas = [];
+  filas.push(['ESTADO DE CUENTA','']);
+  filas.push(['Cliente:',nombreCliente]);
+  filas.push(['Período:',labelDesde+' al '+labelHasta]);
+  filas.push(['Fecha de emisión:',new Date().toLocaleDateString('es-CR')]);
+  filas.push(['','']);
+  filas.push(['Estimado/a '+nombreCliente+':','']);
+  filas.push(['A continuación el detalle de sus pedidos en el período indicado.','']);
+  filas.push(['','']);
+  filas.push(['═══ DETALLE DE PEDIDOS ═══','','','','']);
+  filas.push(['Fecha','Productos','Unidades','Precio unit.','Subtotal','Total pedido','Estado']);
+
+  ped.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).forEach(p=>{
+    // Primera línea del pedido
+    filas.push([
+      fmtFecha(p.fecha),
+      p.items[0]?.nombre||'',
+      p.items[0]?.cantidad||'',
+      p.items[0]?.precio||'',
+      (p.items[0]?.precio||0)*(p.items[0]?.cantidad||0),
+      Number(p.totalVenta),
+      p.estado==='cobrado'?'✓ Cobrado':'Pendiente de pago'
+    ]);
+    // Líneas adicionales de productos
+    p.items.slice(1).forEach(it=>{
+      filas.push(['', it.nombre, it.cantidad, it.precio, it.precio*it.cantidad, '', '']);
+    });
+    filas.push(['','','','','','','']);
+  });
+
+  filas.push(['═══ RESUMEN ═══','','','','','','']);
+  filas.push(['Total facturado en el período','','','','','',tvTotal]);
+  filas.push(['Total cobrado','','','','','',cobrado]);
+  filas.push(['SALDO PENDIENTE','','','','','',pendiente]);
+  filas.push(['','','','','','','']);
+  if(pendiente>0){
+    filas.push(['Por favor gestionar el pago del saldo pendiente de ₡'+Math.round(pendiente).toLocaleString('es-CR')+'.','','','','','','']);
+  } else {
+    filas.push(['Cuenta al día. Gracias por su puntualidad.','','','','','','']);
+  }
+
+  descargarCSV('Estado_Cuenta_'+nombreCliente.replace(/ /g,'_')+'_'+labelDesde.replace(/\//g,'-')+'_al_'+labelHasta.replace(/\//g,'-')+'.csv', filas);
+  toast('✓ Estado de cuenta exportado','as');
 }
 
 initApp();
