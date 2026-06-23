@@ -694,11 +694,13 @@ function actualizarBadge(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-function initApp(){
-  reinitSelects();
-  document.getElementById('np-fecha').value=new Date().toISOString().split('T')[0];
-  cargarPedidos();
-  cargarCatalogo();
+function initApp(){ // tus 4 líneas de const acá
+const hoy = new Date(); const year = hoy.getFullYear(); const mes = String(hoy.getMonth() + 1).padStart(2, '0'); const dia = String(hoy.getDate()).padStart(2, '0');
+ reinitSelects();
+ // asignación de fecha acá
+document.getElementById('np-fecha').value = year+'-'+mes+'-'+dia;
+ cargarPedidos();
+ cargarCatalogo(); 
 }
 
 // ── PEDIDO ────────────────────────────────────────────────────────────────
