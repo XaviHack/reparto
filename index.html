@@ -93,6 +93,21 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
 .modal{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px;width:420px;max-width:90vw}
 .modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
 .tag{display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;margin:2px}
+@media print {
+  body * { visibility: hidden !important; }
+  #ticket-print, #ticket-print * { visibility: visible !important; }
+  #ticket-print {
+    position: fixed !important;
+    top: 0; left: 0;
+    width: 72mm;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  @page { margin: 2mm; size: 80mm auto; }
+}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%);transition:transform .2s}
   .sidebar.open{transform:translateX(0)}
@@ -415,6 +430,20 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
   <div class="card" style="padding:0">
     <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Historial de gastos</div>
     <div id="gastos-historial"><div class="empty">No hay gastos registrados.</div></div>
+  </div>
+</div>
+
+<!-- TICKET IMPRESIÓN -->
+<div id="ticket-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:var(--radius);padding:20px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:15px;font-weight:600;color:var(--text)">Vista previa del ticket</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn" onclick="cerrarTicket()">✕ Cerrar</button>
+      </div>
+    </div>
+    <div id="ticket-print" style="width:72mm;font-family:'Courier New',monospace;font-size:11px;line-height:1.5;color:#000;margin:0 auto;padding:4px"></div>
   </div>
 </div>
 
@@ -1812,6 +1841,66 @@ function exportarEstadoCuenta(){
 
   descargarCSV('Estado_Cuenta_'+nombreCliente.replace(/ /g,'_')+'_'+labelDesde.replace(/\//g,'-')+'_al_'+labelHasta.replace(/\//g,'-')+'.csv', filas);
   toast('✓ Estado de cuenta exportado','as');
+}
+
+
+// ── IMPRIMIR TICKET ───────────────────────────────────────────────────────────
+function imprimirTicket(pedId) {
+  const p = pedidos.find(x => x.id === pedId);
+  if (!p) return;
+
+  const linea = '─'.repeat(32);
+  const centro = (txt, ancho) => {
+    ancho = ancho || 32;
+    const pad = Math.max(0, Math.floor((ancho - txt.length) / 2));
+    return ' '.repeat(pad) + txt;
+  };
+  const col2 = (izq, der, ancho) => {
+    ancho = ancho || 32;
+    const espacio = Math.max(1, ancho - izq.length - der.length);
+    return izq + ' '.repeat(espacio) + der;
+  };
+
+  const fecha = new Date(p.fecha);
+  const fechaStr = fecha.toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const numFactura = p.id.replace('ped-','').slice(-6);
+
+  let items = '';
+  p.items.forEach(it => {
+    const subtotal = it.precio * it.cantidad;
+    const nombreCorto = it.nombre.length > 20 ? it.nombre.slice(0,19)+'.' : it.nombre;
+    items += `<div>${col2(nombreCorto, '', 32)}</div>`;
+    items += `<div>${col2('  ' + it.cantidad + ' x ' + fmt(it.precio), fmt(subtotal), 32)}</div>`;
+  });
+
+  const html = `
+    <div style="text-align:center;font-weight:bold;font-size:13px">PANADERIA LA REINA</div>
+    <div style="text-align:center;font-size:10px">Goicoechea, Guadalupe, San José</div>
+    <div style="text-align:center;font-size:10px">El sabor real del pan</div>
+    <div style="margin:4px 0">${linea}</div>
+    <div>${col2('Fecha:', fechaStr, 32)}</div>
+    <div>${col2('Factura #:', numFactura, 32)}</div>
+    <div>${col2('Cliente:', p.clienteNombre.slice(0,20), 32)}</div>
+    ${p.nota ? `<div>${col2('Nota:', p.nota, 32)}</div>` : ''}
+    <div style="margin:4px 0">${linea}</div>
+    <div style="font-weight:bold">${col2('PRODUCTO', 'TOTAL', 32)}</div>
+    <div style="margin:2px 0">${linea}</div>
+    ${items}
+    <div style="margin:4px 0">${linea}</div>
+    <div style="font-weight:bold;font-size:13px">${col2('TOTAL:', fmt(p.totalVenta), 32)}</div>
+    <div style="margin:4px 0">${linea}</div>
+    <div style="text-align:center;font-size:10px">¡Gracias por su compra!</div>
+    <div style="text-align:center;font-size:10px">El sabor real del pan</div>
+    <div style="margin-top:8px"></div>
+  `;
+
+  document.getElementById('ticket-print').innerHTML = html;
+  const modal = document.getElementById('ticket-modal');
+  modal.style.display = 'flex';
+}
+
+function cerrarTicket() {
+  document.getElementById('ticket-modal').style.display = 'none';
 }
 
 initApp();
