@@ -94,11 +94,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
 .modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
 .tag{display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;margin:2px}
 @media print {
-  body * { visibility: hidden !important; }
-  #ticket-print, #ticket-print * { visibility: visible !important; }
+  body > * { display: none !important; }
+  #ticket-modal { display: block !important; position: static !important; background: none !important; padding: 0 !important; margin: 0 !important; }
+  #ticket-modal > div { box-shadow: none !important; padding: 0 !important; max-height: none !important; border-radius: 0 !important; }
+  #ticket-modal > div > div:first-child { display: none !important; }
   #ticket-print {
-    position: fixed !important;
-    top: 0 !important; left: 0 !important;
+    display: block !important;
     width: 72mm !important;
     font-family: 'Courier New', monospace !important;
     font-size: 12px !important;
@@ -106,10 +107,11 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
     color: #000 !important;
     background: #fff !important;
     padding: 4px !important;
+    margin: 0 !important;
   }
-  #ticket-print .tk-titulo { font-size: 15px !important; font-weight: 700 !important; }
-  #ticket-print .tk-normal { font-size: 12px !important; font-weight: 400 !important; }
-  #ticket-print .tk-total { font-size: 13px !important; font-weight: 700 !important; }
+  .tk-titulo { font-size: 15px !important; font-weight: 700 !important; }
+  .tk-normal { font-size: 12px !important; font-weight: 400 !important; }
+  .tk-total { font-size: 13px !important; font-weight: 700 !important; }
   @page { margin: 0; size: 80mm auto; }
 }
 @media(max-width:768px){
