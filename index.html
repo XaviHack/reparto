@@ -1838,6 +1838,8 @@ function exportarEstadoCuenta(){
 function imprimirTicket(pedId) {
   const p = pedidos.find(x => x.id === pedId);
   if (!p) return;
+  window._currentTicketPedId = pedId;
+  const conIVA = document.getElementById('chk-iva') && document.getElementById('chk-iva').checked;
 
   const linea = '─'.repeat(32);
   const centro = (txt, ancho) => {
@@ -1863,6 +1865,10 @@ function imprimirTicket(pedId) {
     items += `<div class="tk-normal" style="display:flex;justify-content:space-between;padding-left:8px"><span>${it.cantidad} x ${fmt(it.precio)}</span><span>${fmt(subtotal)}</span></div>`;
   });
 
+  const totalBase = Number(p.totalVenta);
+  const totalConIVA = conIVA ? Math.round(totalBase * 1.13) : totalBase;
+  const montoIVA = conIVA ? Math.round(totalBase * 0.13) : 0;
+
   const html = `
     <div class="tk-titulo" style="text-align:center">PANADERIA LA REINA</div>
     <div class="tk-normal" style="text-align:center">Goicoechea, Guadalupe, San José</div>
@@ -1877,7 +1883,11 @@ function imprimirTicket(pedId) {
     <div class="tk-normal" style="margin:2px 0;border-top:1px dashed #000"></div>
     ${items}
     <div class="tk-normal" style="margin:4px 0;border-top:1px dashed #000"></div>
-    <div class="tk-total">${col2('TOTAL:', fmt(p.totalVenta), 32)}</div>
+    ${conIVA ? `
+    <div class="tk-normal">${col2('Subtotal:', fmt(totalBase), 32)}</div>
+    <div class="tk-normal">${col2('IVA (13%):', fmt(montoIVA), 32)}</div>` : ''}
+    <div class="tk-total">${col2('TOTAL:', fmt(totalConIVA), 32)}</div>
+    ${conIVA ? '<div class="tk-normal" style="text-align:center;font-size:10px">Precios incluyen IVA 13%</div>' : ''}
     <div class="tk-normal" style="margin:4px 0;border-top:1px dashed #000"></div>
     <div class="tk-normal" style="text-align:center">¡Gracias por su compra!</div>
     <div class="tk-normal" style="text-align:center;font-style:italic">El sabor real del pan</div>
@@ -1888,6 +1898,11 @@ function imprimirTicket(pedId) {
   const modal = document.getElementById('ticket-modal');
   modal.style.display = 'flex';
   window._ticketHTML = html;
+}
+
+function toggleIVA(){
+  const pedId = window._currentTicketPedId;
+  if(pedId) imprimirTicket(pedId);
 }
 
 function imprimirVentana(){
