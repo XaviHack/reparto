@@ -482,6 +482,53 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
   </div>
 </div>
 
+<!-- EDITOR DE PEDIDO -->
+<div id="editor-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px">
+  <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:24px;width:100%;max-width:700px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:16px;font-weight:600;color:var(--text)">✏️ Editar pedido</div>
+      <button class="btn btn-sm" onclick="cerrarEditorPedido()">✕ Cerrar</button>
+    </div>
+    <input type="hidden" id="edit-pedido-id"/>
+
+    <!-- Datos básicos -->
+    <div class="form-grid g3" style="margin-bottom:16px">
+      <div><label>Cliente</label>
+        <select id="edit-cliente" onchange="onEditClienteChange()"><option value="">— Seleccioná —</option></select>
+      </div>
+      <div><label>Fecha</label><input type="date" id="edit-fecha"/></div>
+      <div><label>Nota (opcional)</label><input type="text" id="edit-nota" placeholder="Ej: CIDE"/></div>
+    </div>
+
+    <!-- Agregar producto -->
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Agregar producto</div>
+      <div class="form-grid g3a">
+        <div><label>Producto</label><select id="edit-producto"><option value="">— Elegí —</option></select></div>
+        <div><label>Cantidad</label><input type="number" id="edit-cantidad" min="1" value="1"/></div>
+        <button class="btn btn-primary" style="height:38px;margin-top:auto" onclick="agregarItemEditor()">+ Agregar</button>
+      </div>
+    </div>
+
+    <!-- Lista de items -->
+    <div id="edit-items-lista" style="margin-bottom:16px"></div>
+
+    <!-- Totales -->
+    <div id="edit-totales" style="display:none;padding:12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:16px">
+      <div style="display:flex;justify-content:flex-end;gap:24px;font-size:13px">
+        <div style="text-align:right"><div style="color:var(--text-2);margin-bottom:2px;font-size:11px">COSTO PAPÁ</div><div style="font-weight:600;color:var(--red);font-family:'DM Mono',monospace" id="edit-tot-costo">₡0</div></div>
+        <div style="text-align:right"><div style="color:var(--text-2);margin-bottom:2px;font-size:11px">FACTURACIÓN</div><div style="font-weight:600;font-family:'DM Mono',monospace" id="edit-tot-venta">₡0</div></div>
+        <div style="text-align:right"><div style="color:var(--text-2);margin-bottom:2px;font-size:11px">GANANCIA</div><div style="font-weight:600;color:var(--green);font-family:'DM Mono',monospace" id="edit-tot-ganancia">₡0</div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="cerrarEditorPedido()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEdicionPedido()">✓ Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- ORDEN INLINE -->
 <div class="orden-overlay" id="orden-overlay">
   <div class="orden-box">
@@ -949,8 +996,9 @@ function renderHistorial(){
         <td><span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${pct(m)}</span></td>
         <td style="text-align:center">${badgeCliente}</td>
         <td style="text-align:center">${badgePapa}</td>
-        <td><div style="display:flex;gap:4px">
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-sm" onclick="verOrden('${p.id}')">Orden</button>
+          <button class="btn btn-sm" onclick="abrirEditorPedido('${p.id}')">✏️ Editar</button>
           <button class="btn btn-sm" onclick="imprimirTicket('${p.id}')" title="Imprimir ticket">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             Ticket
@@ -2183,6 +2231,155 @@ function renderTendTabla(rows){
     <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table></div>`;
+}
+
+
+// ── EDITOR DE PEDIDO ──────────────────────────────────────────────────────────
+let editItemsActuales = [];
+
+function abrirEditorPedido(pedId){
+  const p = pedidos.find(x => x.id === pedId);
+  if(!p) return;
+
+  // Poblar selects de clientes y productos
+  const selCli = document.getElementById('edit-cliente');
+  selCli.innerHTML = '<option value="">— Seleccioná —</option>';
+  CLIENTES.forEach(c => selCli.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+
+  // Datos básicos
+  document.getElementById('edit-pedido-id').value = pedId;
+  selCli.value = p.clienteId || '';
+  document.getElementById('edit-fecha').value = String(p.fecha).split('T')[0];
+  document.getElementById('edit-nota').value = p.nota || '';
+
+  // Cargar items actuales
+  editItemsActuales = JSON.parse(JSON.stringify(p.items || []));
+  onEditClienteChange();
+  renderEditItems();
+
+  // Mostrar modal
+  const modal = document.getElementById('editor-modal');
+  modal.style.display = 'flex';
+}
+
+function cerrarEditorPedido(){
+  document.getElementById('editor-modal').style.display = 'none';
+  editItemsActuales = [];
+}
+
+function onEditClienteChange(){
+  const cid = document.getElementById('edit-cliente').value;
+  const sel = document.getElementById('edit-producto');
+  sel.innerHTML = '<option value="">— Elegí un producto —</option>';
+  if(!cid) return;
+  const preciosCliente = PRECIOS.filter(pr => pr.clienteId === cid);
+  preciosCliente.forEach(pr => {
+    const prod = PRODUCTOS.find(p => p.id === pr.productoId);
+    if(prod) sel.innerHTML += `<option value="${prod.id}">${prod.nombre} — ${fmt(pr.precio)}</option>`;
+  });
+}
+
+function agregarItemEditor(){
+  const cid = document.getElementById('edit-cliente').value;
+  const pid = document.getElementById('edit-producto').value;
+  const qty = Math.max(1, parseInt(document.getElementById('edit-cantidad').value)||1);
+  if(!pid||!cid) return;
+  const prod = PRODUCTOS.find(p => p.id === pid);
+  const precioObj = PRECIOS.find(p => p.clienteId===cid && p.productoId===pid);
+  if(!prod||!precioObj) return;
+  const ex = editItemsActuales.find(i => i.productoId === pid);
+  if(ex){ ex.cantidad += qty; }
+  else { editItemsActuales.push({productoId:pid, nombre:prod.nombre, unidad:prod.unidad, cantidad:qty, costo:prod.costo, precio:precioObj.precio}); }
+  document.getElementById('edit-cantidad').value = 1;
+  renderEditItems();
+}
+
+function cambiarCantidadEditor(idx, d){
+  editItemsActuales[idx].cantidad = Math.max(1, editItemsActuales[idx].cantidad + d);
+  renderEditItems();
+}
+
+function quitarItemEditor(idx){
+  editItemsActuales.splice(idx, 1);
+  renderEditItems();
+}
+
+function renderEditItems(){
+  const el = document.getElementById('edit-items-lista');
+  const totEl = document.getElementById('edit-totales');
+  if(!editItemsActuales.length){
+    el.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:13px;padding:16px">No hay productos. Agregá arriba.</div>';
+    totEl.style.display = 'none';
+    return;
+  }
+  let tc=0, tv=0;
+  el.innerHTML = editItemsActuales.map((it,i) => {
+    const c=it.costo*it.cantidad, v=it.precio*it.cantidad, m=(v-c)/v*100;
+    tc+=c; tv+=v;
+    return `<div style="display:grid;grid-template-columns:1fr 110px 160px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-weight:500;font-size:13px">${it.nombre}</div><div style="font-size:11px;color:var(--text-3)">${it.unidad} · ${fmt(it.precio)} c/u</div></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-sm" onclick="cambiarCantidadEditor(${i},-1)" style="padding:2px 7px">−</button>
+        <span style="font-weight:600;min-width:20px;text-align:center;font-family:'DM Mono',monospace">${it.cantidad}</span>
+        <button class="btn btn-sm" onclick="cambiarCantidadEditor(${i},1)" style="padding:2px 7px">+</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+        <span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(v)}</span>
+        <span class="badge ${m>=40?'bg':m>=20?'ba':'br'}">${m.toFixed(0)}%</span>
+        <button class="btn btn-sm btn-danger" onclick="quitarItemEditor(${i})" style="padding:4px 8px">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  totEl.style.display = 'block';
+  const g = tv-tc;
+  document.getElementById('edit-tot-costo').textContent = fmt(tc);
+  document.getElementById('edit-tot-venta').textContent = fmt(tv);
+  document.getElementById('edit-tot-ganancia').textContent = fmt(g);
+}
+
+async function guardarEdicionPedido(){
+  const pedId = document.getElementById('edit-pedido-id').value;
+  const cid = document.getElementById('edit-cliente').value;
+  const fecha = document.getElementById('edit-fecha').value;
+  const nota = document.getElementById('edit-nota').value.trim();
+  if(!cid||!fecha){ toast('Seleccioná cliente y fecha','ae'); return; }
+  if(!editItemsActuales.length){ toast('Agregá al menos un producto','ae'); return; }
+
+  const p = pedidos.find(x => x.id === pedId);
+  if(!p){ toast('Pedido no encontrado','ae'); return; }
+
+  const cliente = CLIENTES.find(c => c.id === cid);
+  const tc = editItemsActuales.reduce((s,i)=>s+i.costo*i.cantidad,0);
+  const tv = editItemsActuales.reduce((s,i)=>s+i.precio*i.cantidad,0);
+  const fechaCobro = cliente.pago==='credito'
+    ? new Date(new Date(fecha).getTime()+(cliente.diasCredito||22)*86400000).toISOString().split('T')[0]
+    : fecha;
+
+  // Actualizar en memoria
+  p.clienteId = cid;
+  p.clienteNombre = cliente.nombre;
+  p.fecha = fecha;
+  p.fechaCobro = fechaCobro;
+  p.nota = nota;
+  p.tipoPago = cliente.pago;
+  p.items = JSON.parse(JSON.stringify(editItemsActuales));
+  p.totalCosto = tc;
+  p.totalVenta = tv;
+  p.ganancia = tv - tc;
+
+  toast('Guardando...','ai');
+  try{
+    // Eliminar el viejo y guardar el nuevo actualizado
+    await apiPost({action:'eliminar', id:pedId});
+    await apiPost({action:'guardar', pedido:p});
+    await cargarPedidos();
+    actualizarBadge();
+    cerrarEditorPedido();
+    renderHistorial();
+    toast('✓ Pedido actualizado','as');
+  }catch(e){
+    toast('Error al guardar cambios','ae');
+  }
 }
 
 initApp();
