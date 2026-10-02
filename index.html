@@ -2060,6 +2060,7 @@ function imprimirVentana(){
 <body>
 ${contenido}
 <script>window.onload = function(){ window.print(); window.onafterprint = function(){ window.close(); }; }<\/script>
+<script src="ocr.js"></script>
 </body>
 </html>`);
   ventana.document.close();
@@ -2409,5 +2410,6 @@ async function guardarEdicionPedido(){
 
 initApp();
 </script>
+<script src="ocr.js"></script>
 </body>
 </html>
