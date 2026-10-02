@@ -162,6 +162,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div><label>Fecha</label><input type="date" id="np-fecha"/></div>
       <div><label>Nota (opcional)</label><input type="text" id="np-nota" placeholder="Ej: Pedido urgente"/></div>
     </div>
+    <div style="text-align:right;margin-top:8px">
+      <button class="btn" onclick="abrirModalOCR()">Desde imagen o texto</button>
+    </div>
   </div>
   <div class="card" id="card-prods" style="display:none">
     <div class="card-title">Agregar productos</div>
@@ -529,6 +532,28 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
   </div>
 </div>
 
+
+<!-- MODAL OCR -->
+<div id="modal-ocr" style="display:none;position:fixed;z-index:300;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.4)">
+  <div style="background-color:#fefefe;margin:15% auto;padding:20px;border:1px solid #888;width:400px;border-radius:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:18px;font-weight:bold">Desde imagen o texto</span>
+      <span class="close" onclick="cerrarModalOCR()" style="color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer">&times;</span>
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="ocr-text" style="display:block;margin-bottom:5px">Pegá el texto del pedido acá:</label>
+      <textarea id="ocr-text" rows="6" style="width:100%;padding:5px"></textarea>
+    </div>
+    
+    <div style="margin-bottom:15px">
+      <label for="ocr-imagen" style="display:block;margin-bottom:5px">O subí una foto del pedido:</label>
+      <input type="file" id="ocr-imagen" accept="image/*" style="display:block">
+    </div>
+    
+    <button class="btn btn-primary" onclick="procesarOCR()" style="width:100%">Extraer datos</button>
+  </div>
+</div>
 <!-- ORDEN INLINE -->
 <div class="orden-overlay" id="orden-overlay">
   <div class="orden-box">
