@@ -163,7 +163,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div><label>Nota (opcional)</label><input type="text" id="np-nota" placeholder="Ej: Pedido urgente"/></div>
     </div>
     <div style="text-align:right;margin-top:8px">
-      <button class="btn" onclick="abrirModalOCR()">Desde imagen o texto</button>
+      <button class="btn" onclick="try{abrirModalOCR()}catch(e){console.error('Error in abrirModalOCR:',e)}">Desde imagen o texto</button>
     </div>
   </div>
   <div class="card" id="card-prods" style="display:none">
